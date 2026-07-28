@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="data:image/vnd.microsoft.icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA25g0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAERAAAAAAAAAREAAAAAAAABEQAAAAAAAAERAAAAAAAAARERERAAAAABEREREAAAAAEREREQAAAAAREAAAAAAAABEQAAAAAAAAEREREQAAAAARERERAAAAABEREREAAAAAAAAAAAAAAAAAAAAAAAD//wAA//8AAPH/AADx/wAA8f8AAPH/AADwDwAA8A8AAPAPAADx/wAA8f8AAPAPAADwDwAA8A8AAP//AAD//wAA" />
+    <title></title>
+    <script src="https://unpkg.com/lore-engine@1.1.10/dist/lore.min.js"></script>
+    <script src="https://unpkg.com/smiles-drawer@2.1.7/dist/smiles-drawer.min.js"></script>
+    <link 
+      rel="stylesheet" 
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.2/css/all.css" 
+      integrity="sha256-piqEf7Ap7CMps8krDQsSOTZgF+MU/0MPyPW2enj5I40=" 
+      crossorigin="anonymous" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:400,600"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+        height: 100%;
+        user-select: none;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      #lore {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+
+      #title {
+        position: absolute;
+        z-index: 9999;
+        pointer-events: none;
+        text-height: 1;
+        opacity: 0.0;
+        transition: opacity 0.5s ease-in;
+        
+          padding-bottom: 20px;
+        
+          font-size: 1.0em;
+        
+          color: #888888;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #x-axis {
+        position: absolute;
+        z-index: 9999;
+        pointer-events: none;
+        text-height: 1;
+        opacity: 0.0;
+        transition: opacity 0.5s ease-in;
+        
+          padding-top: 20px;
+        
+          font-size: 0.7em;
+        
+          color: #888888;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #y-axis {
+        position: absolute;
+        z-index: 9999;
+        pointer-events: none;
+        text-height: 1;
+        transition: opacity 0.5s ease-in;
+        
+          padding-bottom: 20px;
+        
+          font-size: 0.7em;
+        
+          color: #888888;
+        
+          font-family: 'Open Sans';
+        
+          transform: rotate(-90deg);
+        
+      }
+
+      #tip {
+        position: absolute;
+        z-index: 9999;
+        left: 10px;
+        top: 10px;
+        padding: 5px;
+        font-family: 'Open Sans';
+        background-color: rgba(255, 255, 255, 1.0);
+        border-radius: 2px;
+        border-left: 5px solid #000;
+        pointer-events: none;
+        opacity: 0.0;
+        transition: opacity 0.1s ease-out;
+        filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 1.0));
+      }
+
+      #tip.show {
+        opacity: 1.0;
+        transition: opacity 0.1s ease-out;
+      }
+
+      #tip-text {
+        position: relative;
+        
+        max-width: 250px;
+        
+        font-size: 0.8em;
+        font-weight: bold;
+        white-space: normal;
+        line-break: normal;
+      }
+
+      #hover-indicator {
+        display: none;
+        position: absolute;
+        z-index: 999;
+        border: 1px solid #fff;
+        background-color: rgba(255, 255, 255, 0.25);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      #hover-indicator.show {
+        display: block !important
+      }
+
+      .selected-indicator {
+        position: absolute;
+        z-index: 999;
+        pointer-events: none;
+      }
+
+      .selected-indicator .crosshair-x {
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        height: 2px;
+        width: 100%;
+        margin: auto;
+        
+          background-color: #fff;
+        
+      }
+
+      .selected-indicator .crosshair-y {
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        width: 2px;
+        height: 100%;
+        margin: auto;
+        
+          background-color: #fff;
+        
+      }
+
+      #legend {
+        position: absolute;
+        z-index: 9998;
+        
+          bottom: 10px;
+        
+          right: 10px;
+        
+          padding: 10px;
+        
+          border: 1px solid #262626;
+        
+          border-radius: 2px;
+        
+          background-color: #111111;
+        
+          filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.5));
+        
+          color: #eeeeee;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #legend .container {
+        display: flex;
+        flex: auto;
+        align-items: flex-start;
+        
+        flex-direction: column;
+        
+      }
+
+      #legend .legend-section {
+        width: 100%;
+      }
+
+      #legend .legend-section:not(:first-child) {
+        
+      }
+
+      #legend h2 {
+        font-size: 1em;
+        font-weight: 600;
+        padding-top: 0;
+        margin-top: 0;
+        margin-bottom: 5px;
+        text-align: center;
+        max-width: 250px;
+        white-space: normal;
+      }
+
+      #legend h3 {
+        font-size: 0.8em;
+        margin-top: 10px;
+        margin-bottom: 0px;
+        max-width: 250px;
+        white-space: normal;
+      }
+
+      #legend select {
+        width: 100%;
+        margin-bottom: 5px;
+        background: transparent;
+        color: #fff;
+        border-radius: 2px;
+        font-size: 0.75em;
+      }
+
+      #legend select option {
+        background: #000;
+      }
+
+      #legend .legend-element, #legend .legend-element-range {
+        position: relative;
+        display: flex;
+        flex: auto;
+        align-items: flex-start;
+        padding-bottom: 2px;
+        padding-top: 2px;
+      }
+
+      #legend .legend-element {
+        align-items: flex-start;
+      }
+
+      #legend .legend-element-range {
+        flex-direction: column;
+      }
+
+      #legend .color-box {
+        
+          width: 15px;
+        
+          height: 15px;
+        
+          border: solid 0px;
+        
+      }
+
+      #legend .color-stripe {
+        
+          width: 15px;
+        
+          height: 1px;
+        
+          border: solid 0px;
+        
+      }
+
+      #legend .legend-label {
+        height: 15px;
+        font-size: 0.7em;
+        padding-left: 5px;
+      }
+
+      #legend .legend-label.max {
+        position: absolute;
+        top: 0px;
+        margin-left: 15px;
+      }
+
+      #legend .legend-label.min {
+        position: absolute;
+        bottom: 2px;
+        margin-left: 15px;
+      }
+
+      #selected {
+        position: absolute;
+        display: none;
+        z-index: 9998;
+        width: 250px;
+        
+          bottom: 10px;
+        
+          left: 10px;
+        
+          padding: 0px;
+        
+          border: 1px solid #262626;
+        
+          border-radius: 2px;
+        
+          background-color: #111111;
+        
+          filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.5));
+        
+          color: #eeeeee;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #selected #selected-controls {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 5px 10px;
+        border-bottom: 1px solid #262626;
+        font-size: 0.8em;
+        font-weight: bold;
+      }
+
+      #selected #selected-controls * {
+        display: inline-block;
+      }
+
+      #selected #selected-controls #selected-title {
+        flex-grow: 1;
+        white-space: nowrap; 
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #aaa;
+      }
+
+      #selected #selected-controls a {
+        margin: 0px 2px;
+        font-size: 1.5em;
+        color: #fff;
+        opacity: 0.75;
+        transition: 0.2s;
+      }
+
+      #selected #selected-controls a:hover {
+        opacity: 1.0;
+      }
+
+      #selected #selected-controls a#selected-remove {
+        position: absolute;
+        right: 10px;
+        top: 42px;
+        color: #e74c3c;
+      }
+
+      #selected #selected-container {
+        padding: 10px;
+        font-size: 0.8em;
+      }
+
+      #selected #selected-container img {
+        margin-left: -10px;
+      }
+
+      #selected #selected-container .label {
+        font-weight: bold;
+        color: #aaa;
+        font-size: 0.7em;
+      }
+
+      #selected #selected-container .label:not(:first-child) {
+        margin-top: 2px;
+      }
+
+      #selected #selected-container .content {
+        white-space: nowrap; 
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      #selected #selected-container .content a {
+        text-decoration: none;
+        color: #3498db;
+      }
+
+      #controls {
+        position: absolute;
+        z-index: 9998;
+        
+          top: 10px;
+        
+          right: 10px;
+        
+          padding: 2px;
+        
+          border: 1px solid #262626;
+        
+          border-radius: 2px;
+        
+          background-color: #111111;
+        
+          filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.5));
+        
+          color: #eeeeee;
+        
+          font-family: 'Open Sans';
+        
+      }
+
+      #controls a {
+        display: inline-block;
+        padding: 5px 10px;
+        font-size: 1.2em;
+        color: #fff;
+        opacity: 0.75;
+        transition: 0.2s;
+      }
+
+      #controls a:hover {
+        opacity: 1.0;
+      }
+
+      #controls #more-controls {
+        display: inline-block;
+      }
+
+      #impress {
+        position: absolute;
+        z-index: 9999;
+        top: 10px;
+        left: 10px;
+        font-size: 0.7em;
+        color: #eee;
+      }
+
+      #impress a {
+        color: #3498db;
+        text-decoration: none;
+      }
+
+      #overlay-structure-container {
+        position: absolute;
+        z-index: 9999;
+        top: 50px;
+        left: 275px;
+        right: 100px;
+        bottom: 10px;
+        opacity: .5;
+        pointer-events: none;
+      }
+
+      #overlay-structure {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: auto;
+        margin-bottom: auto;
+      }
+
+
+
+
+
+      .show {
+        opacity: 1.0 !important;
+      }
+
+      .hide {
+        display: none !important;
+      }
+
+      @media only screen and (max-width: 600px) {
+        #selected {
+          position: absolute;
+          display: none;
+          z-index: 9998;
+          width: 125px;
+          opacity: 0.8;
+          background-filter: blur(10px);
+        }
+
+        #selected img {
+          width: 125px;
+        }
+
+        #tip {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    
+    
+    
+    
+
+    <div id="overlay-structure-container" data-binding-id="overlayStructureContainer" class="">
+      <canvas id="overlay-structure" data-binding-id="overlayStructure" width="450" height="687">
+
+      </canvas></div>
+    </div>
+
+    <div id="tip" data-bind="tip">
+      <div id="tip-text" data-bind="tipText"></div>
+    </div>
+    <div id="selected" data-bind="selected">
+      <div id="selected-controls" data-bind="selectedControls">
+        <a id="selected-toggle" data-bind="selectedToggle" href="#">
+          <i class="fas fa-toggle-on"></i>
+        </a>
+        <span>&nbsp;&nbsp;</span>
+        <span id="selected-title" data-bind="selectedTitle"></span>
+        <span>&nbsp;&nbsp;</span>
+        <span id="selected-current" data-bind="selectedCurrent" data-bind="selectedCurrent">0</span><span> / </span><span id="selected-total" data-bind="selectedTotal">0</span>
+        <span>&nbsp;&nbsp;</span>
+        <a id="selected-prev" data-bind="selectedPrev" href="#">
+          <i class="fas fa-angle-left"></i>
+        </a>
+        <span>&nbsp;</span>
+        <a id="selected-next" data-bind="selectedNext" href="#">
+          <i class="fas fa-angle-right"></i>
+        </a>
+        <a id="selected-remove" data-bind="selectedRemove" href="#">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+      <div id="selected-container" data-bind="selectedContainer">
+      </div>
+    </div>
+    <div id="controls" data-bind="controls">
+      <div id="more-controls" data-bind="moreControls" class="hide">
+        <a id="search" data-bind="search" href="#">
+          <i class="fas fa-search"></i>
+        </a>
+        <a id="download" data-bind="download" href="#">
+          <i class="fas fa-download"></i>
+        </a>
+        <a id="export" data-bind="export" href="#">
+          <i class="fas fa-camera"></i>
+        </a>
+        <a id="largepreview" data-bind="largepreview" href="#">
+          <i class="fas fa-expand"></i>
+        </a>
+      </div>
+      <a id="show-controls" data-bind="showControls" href="#">
+        <i class="fas fa-bars"></i>
+      </a>
+    </div>
+    <div id="hover-indicator" data-bind="hoverIndicator"></div>
+    <canvas id="lore"></canvas>
+
+    <div id="sm-search-box" style="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(255,255,255,0.94);border:1px solid #bbb;border-radius:6px;padding:6px 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,0.18);">
+      <input id="sm-search" type="text" placeholder="Search ligand code (e.g. ATP)" autocomplete="off" style="width:210px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:13px;">
+      <button id="sm-search-btn" style="padding:3px 10px;margin-left:4px;border:1px solid #4E79A7;background:#4E79A7;color:#fff;border-radius:4px;cursor:pointer;font-size:13px;">Highlight</button>
+      <button id="sm-search-reset" style="padding:3px 8px;margin-left:2px;border:1px solid #ccc;background:#f2f2f2;color:#333;border-radius:4px;cursor:pointer;font-size:13px;">Clear</button>
+      <div id="sm-search-msg" style="margin-top:3px;color:#333;font-size:12px;min-height:14px;"></div>
+    </div>
+
+
+    
+    <script>
+const data = {
+tmap_family: {
+x: [524.508,150.004,268.957,221.292,215.847,216.452,289.922,118.636,610.54,470.106,351.635,43.95,44.579,334.538,89.331,299.324,298.063,353.259,359.521,508.426,315.824,478.293,474.858,505.013,473.986,233.08,272.876,293.748,204.201,209.002,235.077,533.132,594.94,598.695,220.103,387.528,663.281,547.459,664.761,96.805,369.652,459.23,534.537,327.764,364.56,144.632,314.543,558.317,371.521,666.743,3.007,310.795,13.645,662.674,668.717,438.971,534.266,476.26,556.114,237.771,331.754,570.788,22.601,689.39,629.387,612.841,230.207,180.433,152.845,301.48,310.397,164.177,137.672,555.54,247.901,653.582,461.757,268.271,335.95,657.84,655.915,652.901,666.66,293.885,333.876,479.451,486.385,477.634,482.408,716.625,619.072,551.263,538.726,722.222,718.464,711.914,539.761,559.345,43.409,236.56,261.472,129.329,124.751,528.114,219.819,337.469,727.752,472.175,503.688,468.895,426.15,679.823,680.621,666.757,113.919,697.154,366.622,577.923,578.444,456.612,233.516,29.693,456.543,463.037,139.799,310.741,472.876,478.093,330.538,272.585,595.466,520.545,292.683,301.559,540.396,312.415,30.458,713.613,294.523,241.905,491.572,135.604,238.209,571.498,586.359,507.036,478.406,593.21,375.219,311.549,591.329,566.108,106.884,367.41,370.441,338.509,321.659,505.903,570.471,643.476,672.348,7.64,531.893,324.169,335.387,694.067,564.846,328.414,225.967,508.367,690.485,363.427,286.689,281.949,466.554,315.448,319.652,119.847,128.85,100.249,215.641,320.348,690.253,556.842,276.004,394.622,280.686,98.841,307.08,560.869,21.095,698.273,103.663,329.842,683.239,677.507,426.486,562.656,570.912,248.891,594.559,134.062,138.902,220.766,228.486,679.689,663.31,661.202,666.115,117.485,252.836,112.057,520.537,458.067,234.47,322.742,667.257,363.417,535.445,533.531,546.659,383.283,142.408,383.368,207.226,493.489,119.504,346.754,260.148,393.48,252.383,381.787,296.84,146.932,535.983,134.78,330.418,664.897,317.326,648.353,171.657,31.212,416.996,375.621,153.974,537.621,113.387,153.055,177.095,180.349,292.96,168.714,207.424,205.123,202.466,113.37,277.865,332.769,497.597,649.764,644.714,651.91,457.971,459.511,595.112,459.412,594.836,72.292,521.088,303.604,540.917,543.257,557.26,567.362,482.632,518.222,394.839,368.319,377.651,380.561,72.726,572.68,568.864,569.464,438.578,390.236,404.888,420.658,436.99,439.515,428.614,305.068,232.756,296.916,496.272,495.611,495.592,495.388,576.297,564.641,584.138,341.625,358.373,375.003,432.793,570.324,543.694,270.15,485.345,525.072,646.88,216.411,327.38,303.378,529.534,211.791,141.165,134.6,86.774,288.942,536.392,292.745,623.731,486.919,251.583,430.482,696.867,191.414,594.847,523.564,243.833,395.791,387.206,583.027,539.791,469.563,537.202,501.8,326.04,237.417,273.548,276.923,576.331,572.902,465.227,474.698,274.204,533.018,481.199,274.405,107.141,240.444,470.383,472.876,280.029,298.462,310.304,277.977,276.042,316.984,312.724,306.187,745.519,585.65,590.211,325.889,534.889,25.955,544.476,525.966,509.39,513.961,283.835,693.808,460.604,519.453,738.104,284.361,618.669,286.719,460.611,732.209,180.166,184.161,84.653,44.855,58.646,573.934,398.11,524.105,349.462,132.757,132.071,74.845,533.919,534.107,528.326,529.346,18.08,491.511,297.567,540.056,539.805,245.986,248.924,497.659,578.883,275.107,217.158,714.008,244.299,211.403,532.437,507.193,229.631,542.158,213.525,309.119,230.01,504.369,151.758,155.13,304.117,427.01,362.328,574.219,422.726,341.329,673.968,631.956,240.979,459.345,569.642,523.801,553.184,211.81,568.974,374.955,319.854,571.51,34.335,693.838,750.0,690.41,599.818,211.501,239.643,0.0,554.737,495.272,105.29,109.366,312.964,336.636,460.039,508.281,580.941,360.011,370.223,461.087,294.845,703.217,321.222,294.84,286.68,285.748,686.149,273.368,666.865,297.108,268.07,264.038,321.501,328.991,258.76,289.727,268.547,255.429,335.241,292.568,288.827,543.243,327.96,481.797,216.687,487.84,501.492,693.166,425.654,524.445,319.02,371.266,284.94,274.023,504.038,518.582,532.006,182.787,546.827,552.656,166.611,570.78,308.67,545.089,663.94,579.658,209.964,307.452,360.006,305.115,160.827,326.255,317.627,466.473,313.936,111.001,507.453,243.764,336.761,578.443,517.333,333.128,525.578,499.443,707.053,645.29,295.179,273.121,213.413,231.837,236.296,244.82,469.528,315.381],
+y: [345.925,465.341,99.197,217.151,219.897,215.708,727.244,382.93,492.263,266.686,621.73,316.001,324.032,475.515,514.864,501.146,591.285,617.649,271.197,627.882,590.15,265.594,269.148,338.528,264.338,519.505,99.066,99.672,105.84,93.86,108.205,366.546,339.003,337.367,103.291,93.048,315.522,683.075,361.365,511.82,456.855,439.628,326.056,280.485,458.785,469.116,730.405,706.867,93.478,390.48,374.519,726.32,361.873,601.83,292.871,626.953,331.224,282.639,123.529,232.206,99.117,125.798,336.859,211.498,618.544,625.464,515.546,508.374,489.68,509.585,731.85,518.407,468.769,648.735,312.736,331.954,221.863,537.585,615.5,281.266,276.803,280.923,283.137,731.733,516.97,116.472,131.705,111.993,123.286,394.738,352.81,405.56,401.297,375.013,377.971,394.974,202.286,404.07,310.966,314.253,9.573,419.478,404.07,468.766,221.818,460.374,389.219,288.529,205.162,292.171,202.485,369.412,283.721,385.885,308.295,376.021,453.491,723.407,727.849,475.656,527.014,347.046,465.047,453.672,377.131,440.066,746.387,740.705,472.964,537.538,632.562,688.894,496.256,504.969,468.753,510.171,342.19,382.903,562.939,137.821,415.085,379.816,525.678,518.077,492.56,711.551,637.834,356.004,647.583,698.019,488.575,127.911,507.82,616.697,612.818,619.022,673.67,431.516,130.513,348.747,298.901,368.957,688.94,281.242,658.858,240.328,362.158,648.254,193.248,635.823,238.508,637.253,733.823,736.884,219.681,696.515,702.331,387.885,383.735,342.278,172.443,280.944,268.543,411.57,62.81,442.702,606.707,393.237,715.935,414.971,353.198,240.406,392.291,468.604,371.448,591.426,430.094,114.861,97.115,244.381,485.159,435.052,451.598,172.789,173.209,595.417,371.73,362.52,379.258,378.953,554.052,313.063,205.237,419.622,568.947,706.101,603.136,97.629,464.564,467.995,696.776,86.514,487.777,95.02,515.859,152.944,502.89,97.51,286.386,618.235,298.247,91.135,506.579,488.081,205.273,496.97,302.832,597.478,651.718,614.534,522.399,337.975,622.126,643.413,462.763,460.999,371.322,493.169,506.254,500.477,415.873,518.815,601.356,606.269,589.64,319.689,81.952,654.584,641.55,606.198,606.138,611.273,470.848,462.662,326.35,452.62,347.769,336.226,447.66,717.799,645.247,641.118,127.273,104.973,639.049,449.833,613.602,461.601,258.537,255.558,332.02,91.399,531.141,526.035,226.634,254.017,245.324,236.418,230.65,222.954,207.317,278.561,155.674,413.507,733.1,728.633,722.896,324.922,640.254,403.642,634.927,274.353,267.757,262.366,215.572,367.37,346.097,81.25,732.541,687.137,610.156,193.649,292.756,428.152,681.046,592.998,448.101,450.664,338.939,35.558,687.555,587.108,491.007,204.918,113.509,225.924,226.34,596.758,331.272,400.996,134.456,446.489,88.755,376.456,208.298,750.0,651.099,643.279,651.453,530.195,546.576,538.202,522.825,485.69,224.438,242.488,553.609,684.21,733.767,558.28,356.434,522.275,244.125,247.685,34.221,15.988,8.559,50.075,66.338,0.0,2.887,8.535,398.717,727.453,729.888,470.892,679.967,342.852,134.669,397.655,390.113,391.877,602.548,210.04,632.817,699.303,394.746,484.925,491.535,489.608,432.367,389.522,607.043,603.105,516.791,334.079,334.891,373.048,617.312,471.776,626.805,468.747,431.884,338.841,352.162,340.073,348.768,370.476,333.932,141.407,418.866,404.685,348.885,119.871,117.201,153.355,375.497,102.36,583.075,390.541,319.155,191.63,657.661,204.235,176.736,683.428,581.361,654.446,212.605,651.74,541.721,537.327,656.177,434.678,454.843,714.09,433.49,464.281,595.89,616.673,308.401,424.346,493.301,394.446,478.909,596.972,715.813,254.964,455.21,489.466,344.943,223.916,401.179,254.411,492.92,195.856,228.766,378.064,482.308,184.931,331.12,321.17,104.731,465.541,628.963,622.875,637.564,635.707,643.78,442.52,726.769,221.642,677.927,580.752,275.76,279.283,268.816,26.381,316.505,587.674,19.344,13.514,513.922,515.872,259.249,24.351,274.05,261.2,318.356,576.723,595.572,471.878,476.359,297.412,105.19,311.325,655.501,215.502,224.476,205.34,99.713,649.07,34.608,82.68,165.648,155.983,146.936,496.56,205.175,205.096,523.153,506.46,436.101,138.03,286.473,526.331,105.083,588.217,95.415,502.578,529.69,644.796,104.329,245.437,100.24,390.612,645.844,324.504,322.869,712.513,352.749,311.441,372.595,149.667,218.35,351.53,103.308,533.275,97.158,316.941,154.253,309.966,224.158,95.997],
+z: [375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0],
+labels: ['COc1cc2nc(N3CCNCC3)nc(N)c2cc1OC__0EC (unknown; RNA; MW 289)','Nc1nc2c(ncn2[C@H]2O[C@@H](COP(=O)(O)O)[C@H](O)[C@@H]2O)c(=O)[nH]1__0G (synthetic; RNA/Other; MW 363)','C/C=C\[C@H](C)[C@H]1O[C@]1(C)[C@@H](O)[C@H]1COC(=O)[C@H](O)[C@@H](OC)[C@H](C)C(=O)[C@H](C)[C@@H](O)/C(C)=C/[C@H](C)C(=O)CC[C@@H](C)C1=O__13T (rRNA; RNA/Protein; MW 595)','CC[C@H]1OC(=O)[C@H](C)[C@@H](OC(=O)N2CCC[C@@H]2c2cccnc2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(OC)C[C@@H](C)C(=O)[C@H](C)[C@H]2NC(=O)O[C@@]21C__1F2 (rRNA; RNA/Protein; MW 789)','CC[C@H]1OC(=O)[C@H](C)[C@@H](OC(=O)N2C=CC[C@@H]2c2ccc(NC(C)=O)cc2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(OC)C[C@@H](C)C(=O)[C@H](C)[C@H]2NC(=O)O[C@@]21C__1F3 (rRNA; RNA/Protein; MW 843)','CC[C@H]1OC(=O)[C@H](C)[C@@H](OC(=O)N2CC(C)(C)C[C@@H]2c2cccnc2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(OC)C[C@@H](C)C(=O)[C@@H](C)[C@H]2NC(=O)O[C@@]21C__1F4 (rRNA; RNA/Protein; MW 817)','Cc1cn([C@H]2C[C@H](O)[C@@H](COP(=O)(O)NP(=O)(O)OP(=O)(O)O)O2)c(=O)[nH]c1=O__1FZ (telomerase RNA; RNA/DNA/Protein; MW 481)','Nc1nc2c(ncn2[C@H]2C[C@H](O)[C@@H](CO[P@](=O)(O)C[P@](=O)(O)OP(=O)(O)O)O2)c(=O)[nH]1__1GC (telomerase RNA; RNA/DNA/Protein; MW 505)','OCCOCCOCCOCCOCCO__1PE (multiple; Shared (≥2 big groups); MW 238)','Cc1nc(Cc2cc(F)c(O)c(F)c2)c(O)n1C__1TU (aptamer RNA; RNA; MW 254)','Cc1ncc(C[n+]2cccc(CCO)c2C)c(N)n1__218 (riboswitch; RNA; MW 259)','Nc1nc(N)c2cncnc2n1__29G (riboswitch; RNA; MW 162)','Nc1nc2ncncc2c(=O)[nH]1__29H (riboswitch; RNA; MW 163)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CO)[C@@H](O)[C@H]1N__2AD (tRNA; RNA/Other; MW 266)','Nc1ncnc2c1ncn2[C@@H]1O[C@@H]2CO[P@@](=O)(O)O[C@H]3[C@@H](O)[C@H](n4cnc5c(N)ncnc54)O[C@@H]3CO[P@@](=O)(O)O[C@H]2[C@H]1O__2BA (riboswitch; RNA; MW 658)','Nc1ncnc2c1ncn2[C@H]1CC[C@@H](COP(=O)(O)O)O1__2DA (synthetic; RNA/Other; MW 315)','O=c1ccn([C@@H]2O[C@H](COP(=O)(O)NP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__2KH (multiple; Shared (≥2 big groups); MW 483)','Cc1ncc(CN=[N+]=[N-])c(N)n1__2QB (riboswitch; RNA; MW 164)','NCc1ccc(-c2csnn2)cc1__2QC (riboswitch; RNA; MW 191)','[NH3+][C@@H]1C[C@H]([NH3+])[C@@H](O)C(O)[C@H]1O__2TB (aptamer RNA; RNA/Other; MW 164)','Nc1ccn([C@@H]2O[C@H](COP(=O)(O)CP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)n1__2TM (multiple; Shared (≥2 big groups); MW 481)','CC1=N/C(=C\c2cc(F)c(O)c(F)c2)C(=O)N1CC(F)(F)F__2ZY (aptamer RNA; Shared (≥2 big groups); MW 320)','CC1=N/C(=C\c2cccc(Br)c2)C(=O)N1C__2ZZ (aptamer RNA; RNA; MW 279)','CC[C@@H]1CN2CCc3cc(OC)c(OC)cc3[C@H]2C[C@H]1C[C@@H]1NCCc2cc(OC)c(OC)cc21__34G (multiple; RNA/Protein; MW 481)','CC1=N/C(=C\c2cc(F)c(O)c(F)c2)C(=O)N1C__38E (aptamer RNA; Shared (≥2 big groups); MW 252)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CO[P@](=O)(O)O[P@@](=O)(O)OP(=O)(O)O)C[C@H]1O__3AT (riboswitch; Shared (≥2 big groups); MW 491)','C/C(=C\[C@H](C)C(=O)C[C@H](O)CC1CC(=O)NC(=O)C1)[C@@H]1OC(=O)/C=C/CC/C=C\C=C\[C@@H]1C__3H3 (rRNA; Shared (≥2 big groups); MW 458)','C[C@@H]1C[C@@H]([C@H](O)CC2CC(=O)NC(=O)C2)C(=O)[C@@H](C)C1__3HE (multiple; Shared (≥2 big groups); MW 281)','CC(C)c1oc(=O)cc2c1[C@@H](O)[C@H]1OC(=O)[C@@]3(C)[C@@H](O)[C@H]4O[C@H]4[C@@]2(C)[C@@H]13__3J2 (rRNA; RNA; MW 362)','CC1=C[C@H]2O[C@@H]3[C@H](O)C[C@](C)([C@@]2(CO)[C@H](O)C1=O)[C@]31CO1__3J6 (rRNA; RNA; MW 296)','CC(=O)O[C@@H]1[C@@H](O)[C@H](O[C@H]2[C@H](OC(=O)[C@H]3CC[C@@H]4[C@H](C3)O[C@@]3(C[C@H](OC(=O)/C=C/c5ccccc5)[C@H](C)CO3)[C@]43CO3)O[C@H](C)[C@@H](O)[C@@H]2OC(C)=O)O[C@H](C)[C@H]1O__3K5 (rRNA; RNA/Protein; MW 805)','COc1ccc2c3c(c4cc(OC)c(OC)cc4c2c1)C[C@H]1CCCCN1C3__3K8 (rRNA; RNA/Protein; MW 377)','O[C@H]1[C@H]2c3cc4c(cc3CN3CCC(=C[C@@H]1O)[C@H]23)OCO4__3KD (rRNA; RNA; MW 287)','O=C1N[C@@H]2C(=C[C@H](O)[C@@H](O)[C@H]2O)c2cc3c(c(O)c21)OCO3__3KF (rRNA; RNA; MW 307)','CC1=C[C@H]2O[C@@H]3C[C@H]4OC(=O)/C=C\C=C\C(=O)OCC[C@@H](C)[C@H](O)C(=O)OC[C@@]2(CC1)[C@]4(C)[C@]31CO1__3L2 (rRNA; RNA; MW 503)','CC[C@]1(C)C[C@@H](OC(=O)CS[C@H]2CCCN(C(=O)[C@@H](N)C(C)C)C2)[C@]2(C)[C@H](C)CC[C@]3(CCC(=O)[C@H]32)[C@@H](C)[C@@H]1O__3LK (rRNA; RNA; MW 579)','CCC[C@@H]1C[C@@H](C(=O)N[C@@H]([C@H]2O[C@H](SC)[C@H](O)[C@@H](O)[C@H]2O)[C@@H](C)O)N(C)C1__3QB (rRNA; Shared (≥2 big groups); MW 407)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](O)[C@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CO)[C@@H](OCc4ccc(Cl)cc4)[C@H](O)[C@H]3N)O[C@@H]2CO)[C@H](N)[C@@H](O)[C@@H]1O__3TS (rRNA; RNA/Protein; MW 740)','C[C@H](N)C(=O)N[C@@H]1[C@H]2C(=C(O)C[C@@H](C)[C@@H]2O)C(=O)O[C@]1(C)C(Cl)Cl__3V6 (multiple; RNA; MW 381)','Nc1nc2c(ncn2[C@@H]2O[C@@H]3COP(=O)(O)O[C@H]4[C@@H](O)[C@H](n5cnc6c(N)ncnc65)O[C@@H]4COP(=O)(O)O[C@H]3[C@H]2O)c(=O)[nH]1__4BW (riboswitch; RNA; MW 674)','CO/C(CO[C@H]1O[C@H](C)[C@@H](OC)[C@H](OC)[C@@H]1O)=C1\O[C@H](Oc2ccc(/C=C(\C)C(=O)N[C@H]3[C@@H](O)[C@H](n4cnc5c(N(C)C)ncnc54)O[C@@H]3CO)cc2)[C@@H](O)[C@@H]1O__4M2 (multiple; Shared (≥2 big groups); MW 803)','N[C@@H](Cc1c[nH]c2ccc(O)cc12)C(=O)O__4PQ (aptamer RNA; RNA; MW 220)','CNc1ncc(CN2CCC[C@H](c3nc(O)cc(-c4cccs4)n3)C2)cn1__51B (riboswitch; RNA; MW 382)','CCN1CCN(c2cc3c(cc2F)c(=O)c(C(=O)NCCCN(C)C)cn3C2CC2)CC1__53D (RNA/DNA hybrid; Shared (≥2 big groups); MW 444)','C[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O__5AD (unknown; RNA/Other; MW 251)','Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__5GP (multiple; Shared (≥2 big groups); MW 363)','C[C@@]1(O)[C@H](O)[C@@H](COP(=O)(O)OP(=O)(O)O)O[C@H]1n1ccc(=O)[nH]c1=O__5GS (synthetic; RNA/Protein; MW 418)','C[NH2+][C@@H]1[C@H](O[C@H]2[C@H](O[C@H]3[C@H](O)[C@@H](O)[C@H](NC(N)=[NH2+])[C@@H](O)[C@@H]3NC(N)=[NH2+])O[C@@H](C)[C@]2(O)C(O)O)O[C@@H](CO)[C@H](O)[C@H]1O__5I0 (rRNA; RNA/Protein; MW 603)','C=C[C@]1(C)C[C@@H](OC(=O)CS[C@@H]2CC[C@@H](N)C[C@H]2O)[C@]2(C)[C@H](C)CC[C@]3(CCC(=O)[C@H]32)[C@@H](C)[C@@H]1O__62B (rRNA; RNA; MW 508)','NC(=O)OC[C@@H](O)C[C@H](NC(=O)[C@H]1NCCC[C@@H]1O)C(=O)N[C@@H](Cc1cnc(N)[nH]1)C(=O)N[C@H](C(=O)O)[C@H](O)c1cnc(Cl)[nH]1__6EK (rRNA; RNA/Protein; MW 659)','COc1nc(N)nc2nc[nH]c12__6GO (riboswitch; RNA; MW 165)','C[C@@]1(F)[C@H](O)[C@@H](COP(=O)(O)OP(=O)(O)O)O[C@H]1n1ccc(=O)[nH]c1=O__6GS (synthetic; RNA/Protein; MW 420)','Nc1nc(Cl)c2nc[nH]c2n1__6GU (riboswitch; RNA; MW 170)','CN[C@@H]1[C@@H](O)[C@@H](O[C@@H]2[C@@H](O)[C@H](O[C@H]3OC(CO)=CC[C@H]3N)[C@@H](N)C[C@H]2N)OC[C@]1(C)O__6HS (rRNA; RNA; MW 449)','CS[C@H]1O[C@H]([C@H](NC(=O)[C@H]2NC[C@@H]3C[C@H](CC(C)C)CCO[C@H]32)[C@H](C)Cl)[C@H](O)[C@H](O)[C@H]1O__6IF (multiple; RNA/Protein; MW 495)','N[C@H]1[C@@H](O)[C@H](O)[C@@H](COP(=O)(O)O)O[C@@H]1O__6MN (ribozyme; RNA; MW 259)','COc1ncc(CN2CCC[C@H](c3nc(O)cc(-c4cccs4)n3)C2)cn1__6YG (riboswitch; RNA; MW 383)','CN1C(=O)/C(=C/c2cc(F)c(O)c(F)c2)N=C1/C=N/O__747 (multiple; RNA; MW 281)','C[n+]1ccc(C[C@@H]2Sc3ccccc3N2CC(=O)NCCOCCOCCOCCNC(=O)CCCC[C@@H]2SC[C@@H]3NC(=O)N[C@@H]32)c2ccccc21__74G (aptamer RNA; RNA; MW 752)','CC[C@H]1OC(=O)[C@H](C)C(=O)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(OC/C=C/c2cnc3ccccc3c2)C[C@@H](C)C(=O)[C@H](C)[C@H]2NC(=O)O[C@@]21C__773 (rRNA; RNA; MW 766)','C=C1[C@@H](O)C[C@H]2C(C)(C)C[C@H](Cl)C[C@]2(C)[C@H]1C[C@H](O)[C@H]1CC(=O)NC1=O__7AL (rRNA; RNA/Protein; MW 384)','CN1C(=O)N[C@H]2[C@@H]3NC(=O)c4ccc(Br)n4[C@@H]3C[C@]21O__7MB (rRNA; RNA; MW 341)','Nc1nc2[nH]c(=O)cnc2c(=O)[nH]1__7PD (riboswitch; RNA; MW 179)','CCN(CC)[C@@H]1C(O)=C(C(N)=O)C(=O)[C@@]2(O)C(O)=C3C(=O)c4c(O)cc([C@@H]5CCCN5)c(C(F)(F)F)c4C[C@H]3C[C@@H]12__80P (rRNA; Shared (≥2 big groups); MW 580)','NC[C@@H]1CC[C@@H](N)[C@@H](O[C@H]2[C@H](O)[C@@H](O[C@H]3O[C@H](CO)[C@@H](O)[C@H](N)[C@H]3O)[C@H](N)C[C@@H]2N)O1__84D (rRNA; Shared (≥2 big groups); MW 452)','NCC[C@H](O)C(=O)N[C@@H]1C[C@H](N)[C@@H](O[C@H]2O[C@H](CN)CC[C@H]2N)[C@H](O)[C@H]1O[C@H]1O[C@H](CO)[C@@H](O)[C@H](N)[C@H]1O__84G (multiple; Shared (≥2 big groups); MW 553)','CC(C)[C@@H](O)[C@H](O)C(=O)NP(=O)(O)OC[C@@H]1C[C@H](O)[C@H](n2cnc3c(N)ncnc32)O1__84T (tRNA; RNA/Protein; MW 460)','Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(=O)[nH]c(N)nc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)c(=O)[nH]1__86P (synthetic; RNA; MW 868)','Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(=O)[nH]c(N)nc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)c(=O)[nH]1__86S (synthetic; RNA; MW 708)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)O)[C@@H](N)[C@H]1O__8AN (multiple; RNA; MW 346)','C[C@@]1(F)[C@H](O)[C@@H](COP(=O)(O)OP(=O)(O)O)O[C@H]1c1cnc2c(N)ncnn12__8B4 (unknown; RNA/Protein; MW 443)','Nc1nc2c([nH]c(=O)n2[C@@H]2O[C@H](CO[P@@](=O)(O)O[P@@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__8GT (multiple; Shared (≥2 big groups); MW 539)','Cc1nc[nH]c1P(=O)(O)OC[C@H]1O[C@@H](n2cnc3c(=O)[nH]c(N)nc32)[C@H](O)[C@@H]1O__8OS (synthetic; Shared (≥2 big groups); MW 427)','NC[C@H]1O[C@H](O[C@H]2[C@H](O[C@@H]3O[C@H](CO)[C@@H](O)[C@H](N)[C@H]3O)[C@@H](O)[C@H](N)C[C@@H]2N)[C@H](N)[C@@H](O)[C@@H]1O__8UZ (rRNA; Shared (≥2 big groups); MW 484)','CC(=O)NC[C@H]1CN(c2ccc(-c3cncs3)cc2)C(=O)O1__917 (rRNA; RNA; MW 317)','CS[C@H]1O[C@H]([C@H](NC(=O)c2ccc([N+](=O)[O-])cc2)[C@@H](C)O)[C@H](O)[C@H](O)[C@H]1O__95H (rRNA; RNA; MW 402)','CC1(C)C(/C=C/C=C2\N(CCCO)c3ccccc3C2(C)C)=[N+](CCCO)c2ccccc21__96T (unknown; RNA/Protein; MW 446)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]2O[C@@H](O)[C@H](OP(=O)(O)O)[C@@H]2O)[C@@H](O)[C@H]1O__9SO (tRNA; RNA/Protein; MW 639)','Nc1ccn([C@@H]2O[C@H](COP(=O)(O)NP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)n1__A0I (unknown; RNA/Protein; MW 482)','CC(C)C[C@@H]1CCO[C@@H]2[C@H](CN[C@@H]2C(=O)N[C@H]2[C@H]3O[C@H](OCC/C=C\[C@H]2C)[C@H](O)[C@@H](O)[C@H]3O)C1__A1A1F (multiple; RNA/Protein; MW 483)','CC(C)C[C@@H]1CCO[C@@H]2[C@H](CN[C@@H]2C(=O)N[C@H]2[C@H]3O[C@H](CCC/C=C\[C@H]2C)[C@H](O)[C@@H](O)[C@H]3O)C1__A1A1J (multiple; RNA/Protein; MW 481)','CC(C)C[C@@H]1CCO[C@@H]2[C@H](CN[C@@H]2C(=O)N[C@H]2[C@H]3O[C@H]([Se]CC/C=C\[C@H]2C)[C@H](O)[C@@H](O)[C@H]3O)C1__A1A1K (multiple; RNA/Protein; MW 546)','CC(C)C[C@@H]1CCO[C@@H]2[C@H](CN[C@@H]2C(=O)N[C@H]2[C@H]3O[C@H](SC[C@H](F)C/C=C\[C@H]2C)[C@H](O)[C@@H](O)[C@H]3O)C1__A1A1L (multiple; RNA/Protein; MW 531)','Cc1cn([C@H]2C[C@H](O)[C@@H](COP(=O)(O)CP(=O)(O)OP(=O)(O)O)O2)c(=O)[nH]c1=O__A1ACD (telomerase RNA; RNA/DNA/Protein; MW 480)','NC(=O)c1ncn(-c2cnc3ncccc3c2)c1N__A1AD3 (riboswitch; RNA; MW 254)','CN1C=C/C(=C\c2sc3ccccc3[n+]2CC(=O)NCc2c(F)cccc2-n2cccn2)c2ccccc21__A1AEC (aptamer RNA; RNA; MW 523)','CN1C=C/C(=C\c2sc3ccccc3[n+]2CC(=O)NCc2ccccc2)c2ccccc21__A1AED (aptamer RNA; RNA; MW 439)','CN1C=C/C(=C\c2sc3ccccc3[n+]2CC(=O)NCc2ccccc2-n2cccn2)c2ccccc21__A1AEE (aptamer RNA; RNA; MW 505)','CN1C=C/C(=C\c2sc3ccccc3[n+]2CC(=O)NCc2ccccc2F)c2ccccc21__A1AEF (aptamer RNA; RNA; MW 457)','COC(=O)[C@H]1[C@@H](O)[C@@]2(O)c3c(OC)cc(O[C@@H]4O[C@@H]([C@H](O)CO)CO[C@H]4OC)cc3O[C@@]2(c2ccc(OC)cc2)[C@@H]1c1ccccc1__A1AG8 (unknown; RNA/Protein; MW 655)','COc1ccc2c(CC(=O)N[C@H](CO)[C@H](O)c3ccc([N+](=O)[O-])cc3)c3[n+](cc2c1OC)CCc1cc2c(cc1-3)OCO2__A1AIX (rRNA; RNA; MW 589)','NCCN1CCN=C1c1ccc(C(=O)Nc2ccc(C3=NCCN3)cc2)cc1__A1AZL (unknown; RNA; MW 376)','[H]/N=C(/N)Nc1ccc(OC(=O)c2ccc(N/C(N)=N/[H])cc2)cc1__A1AZM (unknown; RNA; MW 312)','COc1ccc(C[C@H]2NC[C@H](O)[C@H]2OC(=O)NCC[C@@H]2CCCN2)cc1__A1B75 (rRNA; RNA/Protein; MW 363)','COc1ccc(C[C@H]2NC[C@H](O)[C@H]2OC(=O)NCc2cccc(F)c2)cc1__A1B76 (rRNA; RNA/Protein; MW 374)','COc1ccc([C@@]23Oc4cc(OC)cc(OC)c4[C@@]24NC(C)=N[C@@]4(O)[C@H](C(=O)N(C)OC)[C@H]3c2ccccc2)cc1__A1BB1 (unknown; RNA/Protein; MW 560)','CN(C)c1ccc2c(c1)Oc1cc(N(C)C)ccc1C2=c1cc(C(=O)O)ccc1=C(O)N=S([O])(=O)N(C)C__A1BC9 (aptamer RNA; RNA; MW 538)','Cn1nc(-c2ccc(NC(=O)c3ccccc3Cl)cc2)cc1NC(=O)c1ccccc1__A1BNL (rRNA; RNA/Protein; MW 431)','CN(CCN)c1ccnc(N)n1__A1BNU (ribozyme; RNA; MW 167)','COC(=O)NC[C@H]1CN(c2cc(F)c(N3CCS(=O)(=O)CC3)c(F)c2)C(=O)O1__A1BWO (rRNA; RNA/Protein; MW 419)','C/C1=C\CCNC(=O)/C=C/[C@@H](CCCCCn2cc(-c3ccncc3)nn2)[C@@H](C(C)C)OC(=O)[C@H]2CCCN2C(=O)c2coc(n2)C[C@H](F)C[C@H](O)C1__A1C7K (rRNA; RNA; MW 734)','Nc1nc2c(ncn2[C@H]2C[C@H](O)[C@@H](COP(=O)(O)n3cc[n+](P(=O)(O)OC[C@H]4O[C@@H](n5cnc6c(=O)[nH]c(N)nc65)C[C@@H]4O)c3N)O2)c(=O)[nH]1__A1CGJ (synthetic; RNA; MW 743)','Nc1nc2c(ncn2[C@H]2C[C@H](O)[C@@H](COP(=O)(O)n3ccnc3N)O2)c(=O)[nH]1__A1CWA (RNA/DNA hybrid; RNA/DNA; MW 412)','[H]/N=C(/N)NCC(=O)N[C@@H](CCC(N)=O)C(=O)NC[C@H]1O[C@@H](c2c[nH]c(=O)[nH]c2=O)[C@H](O)[C@@H]1O__A1CYH (unknown; RNA/DNA/Protein; MW 470)','CC[C@H]1OC(=O)[C@H](C)[C@@H](OC(=O)NCCCOCCC#Cc2ccc3c(=O)c(C(=O)O)cn(C)c3c2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(OC)C[C@@H](C)C(=O)[C@H](C)[C@H]2NC(=O)O[C@@]21C__A1D6G (rRNA; RNA/Protein; MW 969)','Nc1ncnc2c1ccn2[C@@H]1O[C@](F)(COP(=O)(O)O)[C@@H](O)[C@H]1O__A1DCZ (unknown; RNA/Other; MW 364)','CC(=O)c1ccc(OC[C@@H](O)CN2CCN(C[C@@H](O)COc3ccc(C(C)=O)cc3)CC2)cc1__A1EA7 (ribozyme; RNA; MW 471)','O=C1/C(=C/c2cc(F)c(O)c(F)c2)N=C(/C=N/O)N1Cc1cccc2nc[nH]c12__A1EBI (aptamer RNA; Shared (≥2 big groups); MW 397)','CN(C)c1ccc2c(-c3ccccc3C(=O)O)c3ccc(=[N+](C)C)cc-3oc2c1__A1EI4 (aptamer RNA; RNA/Other; MW 387)','CC1=N/C(=C\c2cc(F)c(O)c(F)c2)C(=O)N1Cc1cccc2nc[nH]c12__A1EST (aptamer RNA; RNA; MW 368)','CN(C)c1ccc(Cc2ccc(N(C)C)s2)s1__A1ETT (RNA/DNA hybrid; RNA/DNA; MW 266)','CC(=O)O[C@@H]1[C@@H](O)CN[C@@H]1Cc1ccc(OCC(=O)N[C@@H](CCCCN)C(=O)O)cc1__A1H4F (mRNA; RNA; MW 437)','CCC[C@@H]1C[C@@H](C(=O)N[C@@H]([C@H]2O[C@H](SCCOC(=O)c3ccccc3O)[C@H](O)[C@@H](O)[C@H]2O)[C@H](C)Cl)N(C)C1__A1I09 (rRNA; RNA; MW 575)','NC(=O)OC[C@@H](O)C[C@H](NC(=O)[C@H]1NCCC[C@H]1O)C(=O)N[C@@H](Cc1c[nH]cn1)C(=O)N[C@H](C(=O)O)[C@H](O)c1c[nH]c(Cl)n1__A1IC4 (multiple; RNA/Protein; MW 644)','O=C(NC1(C(=O)O)CCCC1)c1ccc(-c2ccc(NC(=O)c3nc(-c4ccccc4)oc3C(F)(F)F)cc2)cc1__A1IM2 (unknown; RNA/Protein; MW 564)','C#CCOc1ccc(C[C@H]2NC[C@H](O)[C@H]2OC(C)=O)cc1__A1IWA (mRNA; RNA; MW 289)','NC(=O)[C@@H](N)CC[Se]C[C@H]1O[C@@H](n2cnc3c(N)nc(N)nc32)[C@H](O)[C@@H]1O__A1IY6 (ribozyme; RNA; MW 445)','[H]/N=C(/N)N[C@H]1O[C@@H](CO)[C@H](OC(N)=O)[C@H](O[C@@H]2O[C@H](CO)[C@@H](NC(C)=O)[C@H](O[C@@H]3O[C@H](CO)[C@H](O)[C@H](O[C@@H]4O[C@H](CO)[C@H](OC)[C@H](O)[C@H]4O)[C@H]3O)[C@H]2O)[C@H]1O__A1JA7 (rRNA; RNA/Protein; MW 806)','[H]/N=C(/NCCCCN/C(=N/[H])NC)N[C@H]1O[C@@H](CO)[C@H](OC(N)=O)[C@H](O[C@@H]2O[C@H](CO)[C@@H](NC(C)=O)[C@H](O[C@@H]3O[C@H](CO)[C@H](O)[C@H](O[C@@H]4O[C@H](CO)[C@H](OC)[C@H](O)[C@H]4O)[C@H]3O)[C@H]2O)[C@H]1O__A1JAI (multiple; RNA/Protein; MW 933)','NCCOCCOCCOCCNC(=O)Cn1cc2c(nc1=O)Nc1c(OCCN)cccc1O2__A1L3Y (synthetic; RNA; MW 493)','Cc1ncnc2c1c(I)cn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@@H]1F__A1LVZ (synthetic; RNA/Protein; MW 633)','Cc1nc2c(=O)[nH]c(N)nc2[nH]1__A1LXN (riboswitch; RNA; MW 165)','CN(C)CCOc1ccc2oc3ccccc3c(=O)c2c1__A1LYK (riboswitch; RNA; MW 283)','Cc1nccc2c1[nH]c1cc(OCCN(C)C)ccc12__A1LYL (riboswitch; RNA; MW 269)','C[C@@]1(F)[C@H](O)[C@@H](CO[P@](=O)(S)OP(=O)(O)OP(=O)(O)O)O[C@H]1n1cnc2c(=O)[nH]c(N)nc21__A1ME1 (synthetic; RNA/Protein; MW 555)','C[C@H](N)C(=O)NS(=O)(=O)OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O__A5A (tRNA; RNA/Protein; MW 417)','NCCCNCCO[C@@H]1[C@@H](O)[C@H](O[C@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2N)[C@@H](N)C[C@H]1NC(=O)[C@H](O)CCN__AB6 (rRNA; RNA; MW 525)','NCCNCCO[C@@H]1[C@@H](O)[C@H](O[C@H]2O[C@H](CN)[C@@H](O)[C@H](O)[C@H]2N)[C@@H](N)C[C@H]1NC(=O)[C@H](O)CCN__AB9 (rRNA; RNA; MW 510)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CO)[C@@H](O)[C@H]1O__ADN (riboswitch; Shared (≥2 big groups); MW 267)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CO[P@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O__ADP (multiple; Shared (≥2 big groups); MW 427)','NCC[C@H](O)C(=O)N[C@@H]1C[C@H](N)[C@@H](O[C@H]2O[C@H](CN)[C@@H](O)[C@H](O)[C@H]2O)[C@H](O)[C@H]1O[C@H]1O[C@H](CO)[C@@H](O)[C@H](N)[C@H]1O__AKN (multiple; Shared (≥2 big groups); MW 586)','CN[C@@H]1[C@@H](O[C@H]2O[C@H](CO)[C@@H](N)[C@H](O)[C@H]2O)O[C@H]2C[C@@H](N)[C@@H](O[C@H]3[C@H](O)[C@@H](O)[C@H](N)C[C@@H]3N)O[C@@H]2[C@@H]1O__AM2 (multiple; Shared (≥2 big groups); MW 540)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CO[P@](=O)(O)OC(=O)[C@@H](N)CC(=O)O)[C@@H](O)[C@H]1O__AMO (tRNA; RNA/Protein; MW 462)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]1O__AMP (multiple; Shared (≥2 big groups); MW 347)','N=C(N)NC(=O)c1nc(Cl)c(N)nc1N__AMR (synthetic; RNA; MW 230)','NC(=O)c1ncn([C@@H]2O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]2O)c1N__AMZ (riboswitch; RNA; MW 338)','Nc1nc2[nH]c(N)nc2c(=O)[nH]1__ANG (riboswitch; RNA; MW 166)','COc1ccc(C[C@H]2NC[C@H](O)[C@H]2OC(C)=O)cc1__ANM (multiple; Shared (≥2 big groups); MW 265)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CO[P@](=O)(O)C[P@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O__APC (multiple; Shared (≥2 big groups); MW 505)','CC[C@H]1OC(=O)[C@H](C)C(=O)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@@H](C)C[C@@H](C)C(=O)/C=C/[C@]1(C)O__AQJ (rRNA; RNA/Protein; MW 526)','NC(=[NH2+])NCCC[C@H](N)C(=O)O__ARG (multiple; Shared (≥2 big groups); MW 175)','C[C@@]1(F)[C@H](O)[C@@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)O[C@H]1n1cnc2c(=O)[nH]c(N)nc21__AT9 (synthetic; RNA/Protein; MW 539)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CO[P@@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O__ATP (multiple; Shared (≥2 big groups); MW 507)','Cc1ccc2ccc(NC(=O)OCCCNCCCOC(=O)Nc3ccc4ccc(C)nc4n3)nc2n1__B2R (unknown; Shared (≥2 big groups); MW 504)','OCC(CO)(CO)NCCCNC(CO)(CO)CO__B3P (rRNA; Shared (≥2 big groups); MW 282)','NC[C@@H]1O[C@@H](O[C@@H]2[C@@H](O)[C@@H](O[C@H]3[C@@H](O)[C@H](N)C[C@@H](N)[C@H]3O[C@H]3O[C@H](CO)[C@@H](O)[C@@H](O)[C@H]3N)O[C@H]2CO)[C@H](N)[C@@H](O)[C@H]1O__B6M (rRNA; RNA; MW 616)','NC[C@H]1O[C@H](O)[C@H](N)[C@@H](O)[C@@H]1O__BDG (rRNA; RNA/Other; MW 178)','COc1ccc2cc3[n+](cc2c1OC)CCc1cc2c(cc1-3)OCO2__BER (synthetic; RNA; MW 336)','Cc1ncc(CN(C=O)C(C)C(CCOP(=O)(O)O)SC(=O)c2ccccc2)c(N)n1__BFT (riboswitch; RNA; MW 468)','[H]/N=C(\N)N(C)CC[C@H](N)CC(=O)N[C@H]1C=C[C@H](n2ccc(N)nc2=O)O[C@@H]1C(=O)O__BLS (multiple; Shared (≥2 big groups); MW 422)','OCCN(CCO)C(CO)(CO)CO__BTB (unknown; RNA/DNA; MW 209)','O=C(O)CCCC[C@@H]1SC[C@@H]2NC(=O)N[C@@H]21__BTN (unknown; RNA; MW 244)','Nc1nc2c(ncn2[C@@H]2O[C@@H]3CO[P@](=O)(O)O[C@H]4[C@@H](O)[C@H](n5cnc6c(=O)[nH]c(N)nc65)O[C@@H]4CO[P@](=O)(O)O[C@H]3[C@H]2O)c(=O)[nH]1__C2E (riboswitch; RNA; MW 690)','Nc1ccn([C@@H]2O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)n1__C5P (synthetic; Shared (≥2 big groups); MW 323)','Nc1nc(=O)n([C@@H]2O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]2O)cc1Br__CBV (riboswitch; RNA; MW 402)','Nc1ccn([C@@H]2O[C@H](CO[P@@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)n1__CDP (multiple; Shared (≥2 big groups); MW 403)','Nc1ccn([C@@H]2O[C@H](CO[P@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)C[C@H]2O)c(=O)n1__CH1 (synthetic; Shared (≥2 big groups); MW 467)','NC(=O)NCCC[C@H](N)C(=O)O__CIR (aptamer RNA; RNA; MW 175)','O=C(O)CC(O)(CC(=O)O)C(=O)O__CIT (synthetic; Shared (≥2 big groups); MW 192)','O=C(N[C@H](CO)[C@H](O)c1ccc([N+](=O)[O-])cc1)C(Cl)Cl__CLM (multiple; Shared (≥2 big groups); MW 323)','CCC[C@@H]1C[C@@H](C(=O)N[C@@H]([C@H]2O[C@H](SC)[C@H](O)[C@@H](O)[C@H]2O)[C@H](C)Cl)N(C)C1__CLY (rRNA; RNA; MW 425)','Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1__CMG (riboswitch; RNA; MW 247)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](O)[C@@H]3O[C@@H]4[C@@H](O)[C@H](N)C[C@H](N)[C@H]4O[C@H]4O[C@H](CN)[C@@H](O)[C@H](O)[C@H]4NC[C@H]2O3)[C@H](N)[C@@H](O)[C@@H]1O__CNY (rRNA; RNA; MW 597)','O=C(O)c1cn(C2CC2)c2cc(N3CCNCC3)c(F)cc2c1=O__CPF (rRNA; RNA; MW 331)','Nc1ccn([C@@H]2O[C@H](CO[P@](=O)(O)O[P@@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2N)c(=O)n1__CSG (unknown; RNA/Protein; MW 482)','CN(C)[C@@H]1C(O)=C(C(N)=O)C(=O)[C@@]2(O)C(O)=C3C(=O)c4c(O)ccc(Cl)c4[C@@](C)(O)[C@H]3C[C@@H]12__CTC (riboswitch; RNA; MW 479)','COc1ccc2c(c[n+](C)c3c4cc5c(cc4ccc23)OCO5)c1OC__CTI (riboswitch; RNA; MW 348)','Nc1ccn([C@@H]2O[C@H](CO[P@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)n1__CTP (multiple; Shared (≥2 big groups); MW 483)','CC[C@H]1OC(=O)[C@H](C)[C@@H](O[C@H]2C[C@@](C)(OC)[C@@H](O)[C@H](C)O2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(OC)C[C@@H](C)C(=O)[C@H](C)[C@@H](O)[C@]1(C)O__CTY (rRNA; Shared (≥2 big groups); MW 748)','N[C@@H]1C[C@H](N)[C@@H](O)C(O)[C@H]1O__CYY (rRNA; RNA/Other; MW 162)','CN(C)[C@@H]1C(=O)C(C(N)=O)C(=O)[C@H]2C(O)C3C(O)c4c(O)ccc(Cl)c4[C@@H](O)[C@H]3C[C@@H]12__D2C (rRNA; RNA; MW 453)','Cc1ncc(C[n+]2csc(CCO[P@@](=O)(O)OP(=O)(O)O)c2C)c(O)n1__D2X (riboswitch; RNA; MW 426)','Cc1cn([C@H]2CC[C@@H](CO[P@@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)O2)c(=O)[nH]c1=O__D3T (unknown; RNA/DNA/Protein; MW 466)','Cc1cn([C@H]2C=C[C@@H](COP(=O)(O)O)O2)c(=O)[nH]c1=O__D4M (synthetic; RNA/Other; MW 304)','CCCCCN1C(=O)[C@H]2C3c4ccccc4C(CO)(c4ccccc43)[C@H]2C1=O__DAI (ribozyme; RNA; MW 375)','Nc1ccn([C@H]2C[C@H](O)[C@@H](CO[P@@](=O)(O)O[P@@](=O)(O)OP(=O)(O)O)O2)c(=O)n1__DCP (unknown; Shared (≥2 big groups); MW 467)','Nc1ccn([C@H]2CC[C@@H](CO[P@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)O2)c(=O)n1__DCT (multiple; Shared (≥2 big groups); MW 451)','Nc1nc2c(ncn2[C@H]2C[C@H](O)[C@@H](COP(=O)(O)O)O2)c(=O)[nH]1__DGP (multiple; Shared (≥2 big groups); MW 347)','Nc1nc2c(ncn2[C@H]2C[C@H](O)[C@@H](CO[P@@](=O)(O)O[P@@](=O)(O)OP(=O)(O)O)O2)c(=O)[nH]1__DGT (multiple; Shared (≥2 big groups); MW 507)','Nc1nc(=O)c2c([nH]1)NCC(CNc1ccc(C(=O)N[C@@H](CCC(=O)O)C(=O)O)cc1)=N2__DHF (riboswitch; RNA; MW 443)','CC[C@H]1OC(=O)[C@H](C)[C@@H](O[C@H]2C[C@@](C)(OC)[C@@H](O)[C@H](C)O2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(O)C[C@@H](C)[C@@H]2N[C@@H](COCCOC)O[C@H]([C@H]2C)[C@]1(C)O__DI0 (rRNA; RNA/Protein; MW 835)','CN1Cc2csc3c(C(=O)O)c(=O)c4cc(F)c(N5C[C@H](O)[C@@H](N(C)C)C5)c1c4n23__DKM (riboswitch; RNA; MW 432)','COc1cccc2c1C(=O)c1c(O)c3c(c(O)c1C2=O)C[C@@](O)(C(C)=O)C[C@@H]3O[C@H]1C[C@H](N)[C@H](O)[C@H](C)O1__DM1 (unknown; RNA/DNA; MW 528)','Cn1cc(NC(=O)c2cc(NC(=O)c3cc(NC=O)cn3C)cn2C)cc1C(=O)NCCC(=N)N__DMY (RNA/DNA hybrid; RNA/DNA; MW 482)','CCN(CC)CCS(=O)(=O)[C@@H]1CCN2C(=O)c3coc(n3)CC(=O)C[C@H](O)/C=C(C)/C=C/CNC(=O)/C=C/[C@@H](C)[C@@H](C(C)C)OC(=O)[C@@H]12__DOL (multiple; Shared (≥2 big groups); MW 691)','NCCCSC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O__DSH (riboswitch; Shared (≥2 big groups); MW 340)','CC(C)=CCS[P@@](=O)(O)OP(=O)(O)O__DST (tRNA; RNA/Protein; MW 262)','Nc1ncnc2c1ncn2[C@H]1C[C@H](O)[C@@H](CO[P@](=O)(O)O[P@@](=O)(O)OP(=O)(O)O)O1__DTP (multiple; Shared (≥2 big groups); MW 491)','O=c1ccn([C@H]2C[C@H](O)[C@@H](CO[P@@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)O2)c(=O)[nH]1__DUT (unknown; RNA/Protein; MW 468)','CC(=O)Nc1cc(C(=O)Nc2cn(C)c(C(=O)NCCCC(=O)Nc3ccn(C)c3)n2)n(C)c1__DV4 (unknown; RNA/Protein; MW 469)','Nc1nc2[nH]cnc2c(=S)[nH]1__DX4 (riboswitch; RNA; MW 167)','C[C@H]1c2cccc(O)c2C(=O)C2=C(O)[C@]3(O)C(=O)C(C(N)=O)=C(O)[C@@H](N(C)C)[C@@H]3[C@@H](O)[C@@H]21__DXT (multiple; Shared (≥2 big groups); MW 444)','Nc1ncnc2c1ncn2[C@H]1C[C@H](O)[C@@H](CO[P@](=O)(O)N[P@@](=O)(O)OP(=O)(O)O)O1__DZ4 (RNA/DNA hybrid; RNA/DNA/Protein; MW 490)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CN(CCO)CC[C@H]([NH3+])C(=O)[O-])[C@@H](O)[C@H]1O__E7X (riboswitch; RNA; MW 411)','[H]/N=C(/N)CCCCNCCCNC(=O)CNC(=O)C[C@@H](O)[C@@H](N)CCC[C@@H](NC(=O)[C@H](CN)NC(=O)[C@@H](O)CNC(=O)C[C@H](N)c1ccc(O)cc1)C(=O)O__EDE (rRNA; Shared (≥2 big groups); MW 782)','CN[C@@H]1[C@@H](O)[C@@H](O[C@@H]2[C@@H](O)[C@H](O[C@H]3OC(CNCCO)=CC[C@H]3N)[C@@H](N)C[C@H]2NC(=O)[C@@H](O)CCN)OC[C@]1(C)O__EDS (multiple; RNA; MW 593)','C[Se@@+](CC[C@H](N)C(=O)O)C[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O__EEM (riboswitch; RNA; MW 446)','COCCNC(=O)C[n+]1c(Cc2cc[n+](C)c3ccccc23)sc2ccccc21__EKJ (aptamer RNA; Shared (≥2 big groups); MW 408)','C[n+]1ccc(/C=C/Cc2sc3ccccc3[n+]2C)c2ccccc21__EKM (aptamer RNA; RNA; MW 332)','CC[C@H]1OC(=O)[C@@](C)(F)C(=O)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(OC)C[C@@H](C)C(=O)[C@H](C)[C@H]2N(CCCCn3cc(-c4cccc(N)c4)nn3)C(=O)O[C@]12C__EM1 (rRNA; Shared (≥2 big groups); MW 845)','O=S(=O)(O)CCN1CCN(CCO)CC1__EPE (multiple; Shared (≥2 big groups); MW 238)','Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)n3cc[n+](P(=O)(O)OC[C@H]4O[C@@H](n5cnc6c(=O)[nH]c(N)nc65)[C@H](O)[C@@H]4O)c3N)[C@@H](O)[C@H]2O)c(=O)[nH]1__EQ1 (synthetic; RNA; MW 775)','Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)n3ccnc3N)[C@@H](O)[C@H]2O)c(=O)[nH]1__EQ4 (synthetic; Shared (≥2 big groups); MW 428)','CC[C@H]1OC(=O)[C@H](C)[C@@H](O[C@H]2C[C@@](C)(OC)[C@@H](O)[C@H](C)O2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(O)C[C@@H](C)[C@H](N)[C@H](C)[C@@H](O)[C@]1(C)O__ERN (rRNA; RNA; MW 735)','CC[C@H]1OC(=O)[C@H](C)[C@@H](O[C@H]2C[C@@](C)(OC)[C@@H](O)[C@H](C)O2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(O)C[C@@H](C)C(=O)[C@H](C)[C@@H](O)[C@]1(C)O__ERY (rRNA; Shared (≥2 big groups); MW 734)','CN[C@@H]1[C@@H](O)[C@@H](O[C@@H]2[C@@H](O)[C@H](O[C@H]3OC(CN)=CC[C@H]3N)[C@@H](N)C[C@H]2NS(C)(=O)=O)OC[C@]1(C)O__EUS (rRNA; RNA; MW 526)','N[C@@H](Cc1c[nH]cn1)C(=O)N[C@H](CO)[C@H](O)c1ccc([N+](=O)[O-])cc1__EZG (rRNA; RNA; MW 349)','NCCCC[C@H](N)C(=O)N[C@H](CO)[C@H](O)c1ccc([N+](=O)[O-])cc1__EZM (rRNA; RNA; MW 340)','N[C@H](Cc1c[nH]cn1)C(=O)N[C@H](CO)[C@H](O)c1ccc([N+](=O)[O-])cc1__EZP (rRNA; RNA; MW 349)','Nc1ncnc2c1ncn2[C@H]1C[C@H](O)[C@@H](CO[P@@](=O)(O)C[P@](=O)(O)OP(=O)(O)O)O1__F2A (unknown; RNA/DNA/Protein; MW 489)','Cc1cc2nc3c(=O)[nH]c(=O)nc-3n(C[C@H](O)[C@H](O)[C@H](O)CO[P@@](=O)(O)O[P@](=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](O)[C@@H]3O)c2cc1C__FAD (synthetic; RNA/Other; MW 786)','Nc1nc2c(c(=O)[nH]1)N(C=O)C(CNc1ccc(C(=O)NC(CCC(=O)O)C(=O)O)cc1)CN2__FFO (riboswitch; RNA; MW 473)','CN(C)c1ccc2c(-c3ccc(C(=O)O)cc3C(=O)O)c3ccc(=[N+](C)C)cc-3oc2c1__FH8 (aptamer RNA; RNA; MW 431)','CSCC[C@H](NC=O)C(=O)O__FME (multiple; Shared (≥2 big groups); MW 177)','Cc1cc2nc3c(=O)[nH]c(=O)nc-3n(C[C@H](O)[C@H](O)[C@H](O)COP(=O)(O)O)c2cc1C__FMN (multiple; Shared (≥2 big groups); MW 456)','C[C@H]1O[C@H](O[C@H]2CC[C@H](n3ccc(NC(=O)c4ccc(NC(=O)[C@@](C)(N)CO)cc4)nc3=O)O[C@@H]2C)[C@H](O)[C@@H](O)[C@@H]1N(C)C__FSD (rRNA; RNA/Protein; MW 619)','CN[C@@H]1[C@@H](O)[C@@H](O[C@@H]2[C@@H](O)[C@H](O[C@H]3OC(CF)=CC[C@H]3N)[C@@H](N)C[C@H]2N)OC[C@]1(C)O__FSJ (rRNA; RNA; MW 451)','CC(=O)O[C@H]1C[C@@]2(C)[C@@H](C[C@@H](O)[C@H]3[C@@]4(C)CC[C@@H](O)[C@@H](C)[C@@H]4CC[C@@]32C)/C1=C(\CCC=C(C)C)C(=O)O__FUA (rRNA; Shared (≥2 big groups); MW 517)','[H]/N=C(/N)NCCCCNC(=N)N__FXQ (riboswitch; RNA; MW 172)','[H]/N=C(/N)NCCCCCNC(=N)N__FXT (riboswitch; RNA; MW 186)','NC(=[NH2+])NC[C@@H]1O[C@H](O[C@@H]2[C@H](O[C@@H]3O[C@H](CO)[C@@H](O[C@H]4O[C@@H](CNC(N)=[NH2+])[C@H](O)[C@@H](O)[C@@H]4NC(N)=[NH2+])[C@@H]3O)[C@@H](O)[C@H](NC(N)=[NH2+])C[C@@H]2NC(N)=[NH2+])[C@@H](NC(N)=[NH2+])[C@H](O)[C@H]1O__G0B (TAR RNA; RNA; MW 873)','C=C[C@]1(C)C[C@@H](OC(=O)NC(=O)c2ccc(N)nn2)[C@]2(C)[C@H](C)C=C[C@]3(C[C@H](O)C(=O)[C@H]32)[C@@H](C)[C@@H]1O__G19 (rRNA; RNA/Protein; MW 499)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@@](=O)(O)C[P@@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__G2P (multiple; Shared (≥2 big groups); MW 521)','C=C[C@]1(C)C[C@@H](OC(=O)CSC2C[C@H]3CC[C@@H](C2)N3C)[C@]2(C)[C@H](C)CC[C@]3(CCC(=O)[C@H]32)[C@@H](C)[C@@H]1O__G34 (rRNA; Shared (≥2 big groups); MW 518)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@@](=O)(O)O[P@@](=O)(O)O[P@](=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)c(=O)[nH]1__G3A (synthetic; RNA; MW 772)','CN1/C(=C/c2sc3ccccc3[n+]2CCCS(=O)(=O)O)Oc2ccccc21__G4A (aptamer RNA; RNA; MW 404)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@](=O)(O)OP(=O)(O)O)[C@@H](O[P@](=O)(O)OP(=O)(O)O)[C@H]2O)c(=O)[nH]1__G4P (multiple; Shared (≥2 big groups); MW 603)','C=C1CC[C@H]2C(C)(C)[C@H](Cl)[C@@H](Cl)C[C@]2(C)[C@H]1C[C@H](O)[C@H]1CC(=O)NC1=O__G5B (rRNA; RNA/Protein; MW 402)','O=C(CCl)NC[C@H]1CN(c2ccc(N3CCOCC3)c(F)c2)C(=O)O1__G6M (rRNA; RNA; MW 372)','O=P(O)(O)OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O__G6P (ribozyme; Shared (≥2 big groups); MW 260)','O=C(NC[C@H]1CN(c2ccc(N3CCOCC3)c(F)c2)C(=O)O1)C(Cl)Cl__G6V (rRNA; RNA; MW 406)','C=C[C@]1(C)C[C@@H](OC(=O)CSC2CCNCC2)[C@]2(C)[C@H](C)CC[C@]3(CCC(=O)[C@H]32)[C@@H](C)[C@@H]1O__G80 (rRNA; RNA; MW 478)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CO[P@@](=O)([O-])OC(=O)C[NH3+])[C@@H](O)[C@H]1O__GAP (tRNA; RNA/Protein; MW 404)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@](=O)(O)O[P@](=O)(O)CP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__GCP (rRNA; Shared (≥2 big groups); MW 521)','O=C(O)c1cc(O)c(O)c(O)c1__GDE (ribozyme; RNA; MW 170)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__GDP (multiple; Shared (≥2 big groups); MW 443)','Cc1cn2cc(-c3cc(=O)n4cc(N5CCN(C)CC5)ccc4n3)cc(F)c2n1__GDZ (SRE RNA; RNA; MW 392)','CN[C@@H]1[C@@H](O)[C@@H](O)OC[C@]1(C)O__GE3 (rRNA; RNA/Other; MW 177)','NC(=O)c1nc(F)cn([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c1=O__GE6 (unknown; RNA/Protein; MW 529)','CN[C@@H]1[C@@H](O)[C@@H](O[C@@H]2[C@@H](O)[C@H](O[C@H]3O[C@H]([C@@H](C)O)[C@@H](O)[C@H](O)[C@H]3N)[C@@H](N)C[C@H]2N)OC[C@]1(C)O__GET (multiple; Shared (≥2 big groups); MW 497)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)C[C@H]2O)c(=O)[nH]1__GH3 (unknown; Shared (≥2 big groups); MW 507)','NC[C@H](Cl)[C@@H](O)c1cnc(N)[nH]1__GIR (rRNA; RNA/Protein; MW 191)','N[C@@H]1[C@@H](O)[C@H](O)[C@@H](COP(=O)(O)O)O[C@@H]1O__GLP (ribozyme; Shared (≥2 big groups); MW 259)','Cc1ncc(C[n+]2csc(CCOP(=O)(O)CP(=O)(O)O)c2C)c(N)n1__GMI (riboswitch; RNA; MW 423)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)c(=O)[nH]1__GMP (multiple; Shared (≥2 big groups); MW 283)','[H]/N=C(/N)NCCC[C@H]([NH3+])C(=O)O__GND (aptamer RNA; RNA/Other; MW 175)','Nc1nc(=O)c2ncn([C@H]3C[C@H](O)[C@@H](CO)O3)c2[nH]1__GNG (riboswitch; RNA; MW 267)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@](=O)(O)O[P@](=O)(O)NP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__GNP (multiple; RNA/Protein; MW 522)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@@](=O)(O)OP(=O)(O)O[P@](=O)(O)OC[C@H]3O[C@@H](n4cnc5c(=O)[nH]c(N)nc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)c(=O)[nH]1__GP3 (multiple; Shared (≥2 big groups); MW 788)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@](=O)(O)O[P@](=O)(O)OP(O)(O)=S)[C@@H](O)[C@H]2O)c(=O)[nH]1__GSP (rRNA; RNA/Protein; MW 539)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](COS(=O)(=O)NC(=O)[C@@H](N)CCC(=O)O)[C@@H](O)[C@H]1O__GSU (multiple; RNA/Protein; MW 475)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__GTP (multiple; Shared (≥2 big groups); MW 523)','Cc1cc2nc3c(=O)[nH]c(=O)[nH]c3[n+](CCCc3ccccc3)c2cc1C__GZ4 (riboswitch; RNA; MW 361)','Cc1cc2nc3c(O)nc(O)nc3[n+](CCCCCCC(=O)O)c2cc1NC1CCCC1__GZ7 (riboswitch; RNA; MW 441)','Cc1cc2nc3c(=O)[nH]c(=O)nc-3n(CCN(CCCC(=O)O)Cc3ccccc3)c2cc1C__GZG (riboswitch; RNA; MW 462)','C[C@H](O)[C@H](O)[C@H]1CNc2nc(N)[nH]c(=O)c2N1__H4B (riboswitch; RNA; MW 241)','CC1=C\[C@@H](O)CC(=O)Cc2nc(co2)C(=O)n2cccc2C(=O)O[C@H](C(C)C)[C@H](C)/C=C/C(=O)NC\C=C\1__H8T (rRNA; RNA/Protein; MW 524)','Nc1ccn([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@@H]2O)c(=O)n1__HF4 (synthetic; RNA/Protein; MW 483)','CC(=O)[C@H]1O[C@@H](OC2=CCC(/C=C(\C)C(=O)N[C@@H]3[C@H](O)[C@@H](O)[C@H]4OCO[C@H]4[C@@H]3O)=CC2=O)[C@@H](O)[C@@H]1O__HGR (multiple; Shared (≥2 big groups); MW 511)','CN[C@@H]1[C@@H](O)[C@@H](O[C@H]2[C@H](O)[C@@H](O[C@H]3O[C@H](CN)CC[C@H]3N)[C@@H](N)C[C@H]2NC(C)=O)OCC1(C)O__HJO (rRNA; RNA; MW 492)','CN[C@H]1C[C@@H](O[C@H]2[C@H](O)[C@@H](O[C@@H]3CCC[C@@H](CN)O3)[C@H](N)C[C@H]2NS(=O)(=O)C(F)(F)F)OC[C@]1(C)O__HJR (rRNA; RNA; MW 551)','CN[C@H]1[C@H](O)[C@@H](O[C@H]2[C@H](O)[C@@H](O[C@H]3O[C@H](CN)CC[C@H]3N)[C@H](N)C[C@H]2NS(=O)(=O)c2cccnc2)OC2C[C@]21O__HKO (rRNA; RNA; MW 589)','NCCOc1ccc2oc3ccccc3c2c1__HLV (riboswitch; Shared (≥2 big groups); MW 227)','CN(C)CCOc1ccc2oc3ccccc3c2c1__HMJ (riboswitch; RNA; MW 255)','COC(=O)C[C@](O)(CCCC(C)(C)O)C(=O)O[C@@H]1C(OC)=C[C@]23CCCN2CCc2cc4c(cc2[C@H]13)OCO4__HMT (multiple; RNA; MW 546)','CN(C)CCOc1ccc2[nH]c3ccccc3c2c1__HMV (riboswitch; RNA; MW 254)','CO[C@@H]1C=C[C@@]23c4cc5c(cc4CN(C[C@@H]2O)[C@H]3C1)OCO5__HN8 (rRNA; RNA; MW 301)','NCc1c[nH]c2[nH]c(N)nc(=O)c12__HNG (riboswitch; RNA; MW 179)','N=C(N)NCCCC[C@H](N)C(=O)O__HRG (riboswitch; RNA; MW 188)','COC(=O)c1ccc2c(ccn2[C@@H]2C[C@H](O)[C@@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)O2)c1__HUV (RNA/DNA hybrid; RNA/DNA/Protein; MW 531)','CN[C@H]1C[C@@H](N)[C@H](O)[C@@H](O[C@@H]2O[C@H](CO)[C@H](O)[C@@H]3O[C@]4(O[C@H]23)O[C@H]([C@@H](N)CO)[C@H](O)[C@H](O)[C@H]4O)[C@@H]1O__HY0 (rRNA; Shared (≥2 big groups); MW 528)','CN[C@H]1C[C@@H](N)[C@H](O)[C@@H](O[C@@H]2O[C@H](CO)C(O)[C@@H]3O[C@@]4(O[C@@H]([C@@H](N)CO)[C@H](O)[C@@H](O)[C@H]4O)O[C@@H]23)[C@@H]1O__HYG (multiple; Shared (≥2 big groups); MW 528)','C[n+]1ccc(Cc2sc3ccccc3[n+]2CC(=O)NCCOCCOCCOCCNC(=O)CCCC[C@H]2SC[C@H]3NC(=O)N[C@H]32)c2ccccc21__HZD (aptamer RNA; RNA; MW 751)','CC(=O)C[n+]1c(Cc2cc[n+](C)c3ccccc23)sc2ccccc21__HZG (aptamer RNA; RNA; MW 348)','NC[C@@H]1O[C@H](O)[C@H](N)[C@@H](O)[C@@H]1O__IDG (rRNA; RNA/Other; MW 178)','[H]/N=C(/C)NCCCC[C@H](N)C(=O)O__IEL (riboswitch; RNA; MW 187)','O=P(O)(O)OC1C(OP(=O)(O)O)C(OP(=O)(O)O)C(OP(=O)(O)O)C(OP(=O)(O)O)C1OP(=O)(O)O__IHP (multiple; RNA/Protein; MW 660)','CC[C@H](C)[C@H](N)C(=O)NS(=O)(=O)NC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O__ILA (tRNA; RNA/Protein; MW 459)','CN(C)CCCn1c(N)nc2ccc3c(c21)C[C@H](CN(C)C)O3__ISH (rRNA; RNA; MW 317)','CN(C)CCCn1c(N)nc2ccc3c(c21)C[C@@H](CN(C)C)O3__ISI (rRNA; RNA; MW 317)','C#CCCC1(CCNCc2c[nH]c3[nH]c(N)nc(=O)c23)N=N1__J0C (riboswitch; RNA; MW 299)','CN1/C(=C/c2cc[n+](C)c3ccccc23)Sc2ccccc21__J0D (aptamer RNA; RNA; MW 305)','O=C1Nc2ccc3ccc(nc3n2)C[NH2+]Cc2ccc3ccc(nc3n2)NC(=O)OCC/C=C/CCO1__J48 (unknown; RNA/Other; MW 501)','O=C1Nc2ccc3ccc(nc3n2)C[NH2+]Cc2ccc3ccc(nc3n2)NC(=O)OCCCNCCCO1__J4H (unknown; RNA; MW 518)','CN(CCO)c1ccc(/C=C(\C#N)c2ccc(C#N)cc2)cc1__J8F (aptamer RNA; RNA; MW 303)','CN(C)CCN(C)c1cnc(/C=C(\C#N)c2ccc(C#N)cc2)cn1__J8L (aptamer RNA; RNA; MW 332)','CN(CCO)c1cnc(/C=C(\C#N)c2ccc(C#N)cc2)cn1__J8O (aptamer RNA; RNA; MW 305)','CN(CCO)c1ccc(/C=C(\C#N)c2ccc(C#N)cc2)cn1__J8R (aptamer RNA; RNA; MW 304)','CN(C)CCN(C)c1ccc(/C=C(\C#N)c2ccc(C#N)cc2)cc1__J8U (aptamer RNA; RNA; MW 330)','CN(CCO)c1ccc(/C=C(\C#N)c2nc3ccccc3o2)cc1__J8X (aptamer RNA; RNA; MW 319)','CN(CCO)c1cc2sc(/C=C(\C#N)c3ccc(C#N)cc3)cc2s1__J93 (aptamer RNA; RNA; MW 365)','O=C(O)c1cn(C2CC2)c2cc(N3CCC(O)(COc4ccc(N5C[C@H](CO)OC5=O)cc4F)CC3)c(F)cc2c1=O__JJH (tRNA; RNA; MW 586)','CO[C@@H]1[C@@H](O[C@@H]2O[C@H](C)[C@@H](O[C@H]3C[C@@](C)(O)[C@@H](OC(=O)CC(C)C)[C@H](C)O3)[C@H](N(C)C)[C@H]2O)[C@@H](CC=O)C[C@@H](C)[C@@H](O)C/C=C/C=C\[C@@H](C)OC(=O)C[C@H]1OC(C)=O__JOS (rRNA; RNA; MW 828)','NCC(=O)NS(=O)(=O)OC[C@H]1O[C@@H](n2cnc3c(N)nc(Cl)nc32)[C@H](O)[C@@H]1O__JPO (tRNA; RNA/Protein; MW 438)','NCCCNCCO[C@@H]1C(O[C@H]2O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]2N)[C@@H](CO)O[C@H]1O[C@@H]1[C@@H](O)[C@H](N)C[C@H](N)[C@H]1O[C@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1N__JS4 (rRNA; RNA; MW 716)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](OCCNCC3CCCNC3)[C@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CO)[C@@H](O)[C@H](O)[C@H]3N)O[C@@H]2CO)[C@H](N)[C@@H](O)[C@@H]1O__JS5 (rRNA; RNA; MW 756)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](OCCNCCc3ccccc3)[C@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CO)[C@@H](O)[C@H](O)[C@H]3N)O[C@@H]2CO)[C@H](N)[C@@H](O)[C@@H]1O__JS6 (rRNA; RNA; MW 763)','CC[C@H]1CN2CCc3cc(OC)c(OC)cc3[C@@H]2C[C@@H]1C[C@H]1NCCc2cc(O)c(OC)cc21__K16 (rRNA; RNA/Protein; MW 467)','NC[C@H]1O[C@H](O[C@H]2[C@H](O)[C@@H](O[C@H]3O[C@H](CO)[C@@H](O)[C@H](N)[C@H]3O)[C@H](N)C[C@@H]2N)[C@H](O)[C@@H](O)[C@@H]1O__KAN (rRNA; Shared (≥2 big groups); MW 485)','C#Cc1ccc(-c2nnc(NC(=O)c3ccc(N)cc3)o2)cc1__KKL (rRNA; RNA; MW 304)','[H]/N=C(\N[C@H]1C[C@H](N)[C@@H](OC2[C@@H](O)[C@@H](O)C(O)[C@H](O)[C@H]2O)O[C@@H]1C)C(=O)O__KSG (multiple; Shared (≥2 big groups); MW 379)','c1cc(N2CCNCC2)c(CNCc2ccc3nccnc3c2)cn1__KWL (riboswitch; RNA; MW 334)','CNCc1ccc2nccnc2c1__KWU (riboswitch; RNA; MW 173)','CN(C)CCNCc1ccc2nccnc2c1__KXC (riboswitch; RNA; MW 230)','CN(CCO)c1ccc2cc(/C=C(\C#N)c3ccc(C#N)cc3)sc2c1__KY6 (aptamer RNA; RNA; MW 359)','COc1cc(N)cc2ccccc12__L8H (TAR RNA; RNA/Other; MW 173)','C[NH+](C)CCC[NH+]=C(N)c1ccc(/C(N)=[NH+]/CCC[NH+](C)C)cc1__L94 (TAR RNA; RNA; MW 337)','CC(=O)C(=O)N[C@@H]1/C=C(C)/C=C/[C@@H](O)C/C=C(C)/C=C/[C@@H](O)C[C@H]2OC(=O)[C@]1(C)C(=O)[C@@H]2C__LC2 (rRNA; Shared (≥2 big groups); MW 460)','NCC[C@H](O)C(=O)N[C@@H]1C[C@H](N)[C@@H](O[C@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2N)[C@H](O[C@@H]2O[C@H](CO)[C@@H](O[C@H]3O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]3N)[C@H]2OCCNCCc2ccccc2)[C@H]1O__LHA (rRNA; RNA; MW 864)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](O)[C@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CO)[C@@H](O)C[C@H]3N)O[C@@H]2CO)[C@H](N)[C@@H](O)[C@@H]1O[C@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@@H]1O__LIV (multiple; Shared (≥2 big groups); MW 762)','CN[C@@H]1[C@@H](O)[C@@H](O[C@@H]2[C@@H](O)[C@H](O[C@H]3O[C@H](CN)CC[C@H]3N)[C@@H](N)C[C@H]2N)OC[C@]1(C)O__LLL (rRNA; Shared (≥2 big groups); MW 450)','CO[C@H]1C[C@@H](C)O[C@@H](O[C@@H]2[C@@H](C)[C@H](O[C@H]3C[C@@](C)(OC)[C@H](OC(C)=O)[C@H](C)O3)[C@@H](C)C(=O)O[C@H]([C@H](C)[C@@H](C)O)[C@H](C)[C@H](OC(C)=O)[C@@H](C)C(=O)[C@@](C)(O)C[C@@H]2C)[C@@H]1C__LMA (rRNA; Shared (≥2 big groups); MW 831)','CC(=O)c1c(C)c2cnc(Nc3ccc(N4CCNCC4)cn3)nc2n(C2CCCC2)c1=O__LQQ (TAR RNA; RNA; MW 448)','CC(C)C[C@H](N)C(=O)NS(=O)(=O)OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O__LSS (tRNA; RNA/Protein; MW 459)','CCC[C@H]1[C@H](O)[C@@H](N)[C@@H](O[C@H]2[C@H](O[C@@H]3O[C@H](CO)[C@@H](O[C@H]4O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]4N)[C@H]3O)[C@@H](O)[C@H](N)C[C@@H]2N)O[C@@H]1CO__LUJ (rRNA; Shared (≥2 big groups); MW 642)','Cc1cc2nc3[nH]c(=O)[nH]c(=O)c3nc2cc1C__LUM (riboswitch; RNA; MW 242)','Nc1nc2c(ncn2[C@@H]2O[C@H](CO[P@@](=O)(S)n3ccnc3N)[C@@H](O)[C@H]2O)c(=O)[nH]1__LXI (synthetic; RNA; MW 444)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)n2ccnc2N)[C@@H](O)[C@H]1O__LXR (synthetic; RNA; MW 412)','Nc1nc(=O)c2c(CCc3ccc(C(=O)N[C@@H](CCC(=O)O)C(=O)O)cc3)c[nH]c2[nH]1__LYA (riboswitch; RNA; MW 427)','CC1=C\[C@@H](O)C[C@H](O)Cc2nc(co2)C(=O)N[C@H](C)C(=O)O[C@H](C(C)C)[C@H](C)/C=C/C(=O)NC/C=C\1__M2D (rRNA; RNA; MW 504)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](O)[C@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@@H]4CO[C@@H](CCc5ccccc5)O[C@H]4[C@H](O)[C@H]3N)O[C@@H]2CO)[C@H](N)[C@@H](O)[C@@H]1O__M5Z (rRNA; RNA/Protein; MW 732)','CN(C)c1nc(=O)c2c([nH]1)N([C@@H]1O[C@H](CO[P@@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O)CN2C__M7M (snRNA; RNA/Protein; MW 487)','O=S(=O)([O-])CC[NH+]1CCOCC1__MES (multiple; Shared (≥2 big groups); MW 195)','CN(C)c1ccc(C(=C2C=CC(=[N+](C)C)C=C2)c2ccccc2)cc1__MGR (aptamer RNA; RNA; MW 329)','CC[C@H]1OC(=O)/C=C/[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@@H](C)C[C@@H](C)C(=O)/C=C/C=C/[C@@H]1CO[C@@H]1O[C@H](C)[C@@H](O)[C@@H](OC)[C@H]1OC__MIV (rRNA; RNA/Protein; MW 696)','O=C1c2c(O)ccc(O)c2C(=O)c2c(NCCNCCO)ccc(NCCNCCO)c21__MIX (mRNA; RNA; MW 444)','CN(C)c1ccc(O)c2c1C[C@H]1C[C@H]3[C@H](N(C)C)C(O)=C(C(N)=O)C(=O)[C@@]3(O)C(O)=C1C2=O__MIY (multiple; RNA; MW 457)','CCC1=C(C)c2cc3c(CC)c(C)c(cc4nc(cc5[nH]c(cc1n2)c(C)c5CCC(=O)O)C(CCC(=O)O)=C4C)n3C__MMP (synthetic; RNA; MW 581)','COC(=O)C[C@@](O)(CCC(C)(C)O)C(=O)O[C@@H]1C(OC)=C[C@]23CCCN2CCc2cc4c(cc2[C@H]13)OCO4__MQ6 (rRNA; RNA; MW 532)','[H]/N=C(/N)c1ccc2nc(C)cc(Nc3cccc(OC)c3)c2c1__MQC (mRNA; RNA; MW 306)','CC[C@H]1OC(=O)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@@H](C)C[C@@H](C)C(=O)/C=C/[C@]1(C)O__MT9 (rRNA; Shared (≥2 big groups); MW 470)','CSC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O__MTA (riboswitch; Shared (≥2 big groups); MW 297)','C=C[C@]1(C)C[C@@H](OC(=O)CSCCN(CC)CC)[C@]2(C)[C@H](C)CC[C@]3(CCC(=O)[C@H]32)[C@@H](C)[C@@H]1O__MUL (rRNA; Shared (≥2 big groups); MW 494)','O=C(c1ccc(-n2nnc3cccnc32)cc1)N(c1ncccc1Cl)[C@@H]1CCCNC1__MVM (rRNA; RNA/Protein; MW 434)','O=c1c(O)c(-c2cc(O)c(O)c(O)c2)oc2cc(O)cc(O)c12__MYC (unknown; RNA; MW 318)','C=C1C[C@](OC)([C@H](O)C(=O)N[C@@H]2OCO[C@H]3[C@@H]2O[C@H](C[C@H](O)CO)C(C)(C)[C@@H]3OC)O[C@H](C)[C@@H]1C__MYL (rRNA; RNA/Protein; MW 504)','NC[C@H]1O[C@@H](O[C@@H]2[C@@H](O)[C@H](N)C[C@H](N)[C@H]2O[C@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2N)[C@H](O)[C@@H]1O__N30 (rRNA; RNA; MW 454)','N[C@@H]1[C@@H](OCO[C@@H]2[C@@H](N)[C@@H](O[C@H]3[C@H](O)[C@@H](O)[C@H](N)C[C@@H]3N)O[C@H](CO)[C@H]2O)[C@H](O)[C@@H](CO)O[C@@H]1O__N33 (rRNA; RNA; MW 515)','Nc1nc(=O)n([C@@H]2O[C@H](CO[P@@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)cc1[N+](=O)[O-]__N5C (unknown; RNA/Protein; MW 528)','CNc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O__N6E (riboswitch; RNA; MW 521)','NC(=O)c1ccc[n+]([C@@H]2O[C@H](CO[P@@](=O)([O-])O[P@@](=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)c1__NAD (multiple; Shared (≥2 big groups); MW 663)','NC(=O)C1=CN([C@@H]2O[C@H](CO[P@](=O)(O)O[P@@](=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)C=CC1__NAI (riboswitch; RNA; MW 665)','Cc1ccc2ccc(NC(=O)CCNCCC(=O)NCc3ccc4ccc(=O)[nH]c4n3)nc2n1__NAZ (unknown; RNA; MW 460)','CN(CC(=O)O)NC(=O)C[C@H](N)C[C@@H](O)CN__NEG (multiple; Shared (≥2 big groups); MW 248)','CN1C(=O)/C(=C/c2ccc(N(C)CCO)cc2)N=C1/C=C/c1ccccc1__NI4 (multiple; RNA; MW 361)','CN1C(=O)/C(=C/c2cc(F)c(O)c(F)c2)N=C1/C=C/c1ccc(O)cc1__NJL (aptamer RNA; RNA; MW 356)','NC(=O)c1ccc[n+]([C@@H]2O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]2O)c1__NMN (riboswitch; RNA; MW 335)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](O)[C@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CN)[C@@H](O)[C@H](O)[C@H]3N)O[C@@H]2CO)[C@H](N)[C@@H](O)[C@@H]1O__NMY (multiple; Shared (≥2 big groups); MW 615)','NCC[C@H](O)C(=O)N[C@@H]1C[C@H](N)[C@@H](O[C@H]2O[C@H](CN)[C@H](F)[C@H](O)[C@H]2N)[C@H](O[C@@H]2O[C@H](CO)[C@@H](O[C@H]3O[C@@H](CN)[C@@H](O)[C@H](O)[C@H]3N)[C@H]2O)[C@H]1O__NMZ (rRNA; RNA; MW 718)','NC(=O)c1ccc[n+]([C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)c1__NNR (riboswitch; RNA; MW 255)','Nc1nc(=O)c2c([nH]1)NCC([C@H](O)[C@H](O)CO)=N2__NPR (riboswitch; RNA; MW 255)','N#C[C@@]1(c2ccc3c(N)ncnn23)O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O__NWX (synthetic; RNA/Protein; MW 531)','CN1C(=O)/C(=C/c2cc(F)c(O)c(F)c2)N=C1/C=C/c1ccccc1__O00 (aptamer RNA; RNA; MW 340)','CN1C(=O)/C(=C/c2cc(F)c(O)c(F)c2)N=C1/C=C/c1ccc(C#N)cc1__O2I (aptamer RNA; RNA; MW 365)','C=CC[C@@H]1/C=C/C(=O)NC/C=C/C(C)=C/[C@@H](O)C[C@@H](F)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@@H]1C(C)C__O7S (rRNA; Shared (≥2 big groups); MW 558)','CC1=C\[C@@H](O)C[C@@H](F)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@H]([C@H](C)COC(=O)Nc2cc3ccccc3cn2)[C@H](C)/C=C/C(=O)NC\C=C\1__O7V (rRNA; Shared (≥2 big groups); MW 718)','CC1=C\[C@@H](O)CC(=O)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@H]([C@H](C)COC(=O)Nc2cc3ccccc3cn2)[C@H](C)/C=C/C(=O)NC\C=C\1__O7Y (rRNA; RNA; MW 714)','C=CC[C@@H]1/C=C/C(=O)NC/C=C/C(C)=C/[C@@H](O)CC(=O)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@@H]1C(C)C__O8D (rRNA; RNA; MW 554)','CC1=C\[C@@H](O)CC(=O)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@H](C(C)C)[C@H](C)/C=C/C(=O)NC\C=C\1__O8J (rRNA; RNA; MW 528)','CC1=C\[C@@H](O)CC(=O)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@H]([C@H](C)COC(=O)Nc2ccnc(Br)c2)[C@H](C)/C=C/C(=O)NC\C=C\1__O8P (rRNA; RNA; MW 743)','CC1=C\[C@@H](O)CC(=O)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@H]([C@H](C)COC(=O)Nc2ccc(C(F)(F)F)cc2)[C@H](C)/C=C/C(=O)NC\C=C\1__O8S (rRNA; RNA; MW 731)','CC1=C\[C@@H](O)CC(=O)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@H]([C@@H](C)COC(=O)Nc2cc3ccccc3cn2)[C@H](C)/C=C/C(=O)NC\C=C\1__O8V (rRNA; RNA; MW 714)','COC(=O)c1c(OC)cc2cc3c(c(O)c2c1C)C(=O)[C@]1(OC)C(=O)C=C(OC)[C@@H](O)[C@]1(O)C3=O__OCW (multiple; Shared (≥2 big groups); MW 486)','NCCC[C@H](N)CC(=O)N[C@@H]1[C@H](O)[C@@H](OC(N)=O)[C@@H](CO)O[C@H]1NC1=N[C@@H]2C(=O)NC[C@@H](O)[C@H]2N1__OI9 (rRNA; RNA/Protein; MW 503)','NCCC[C@H](N)CC(=O)NCCC[C@H](N)CC(=O)NCCC[C@H](N)CC(=O)N[C@@H]1[C@H](O)[C@@H](OC(N)=O)[C@@H](CO)O[C@H]1NC1=N[C@@H]2C(=O)NC[C@@H](O)[C@H]2N1__OIY (rRNA; Shared (≥2 big groups); MW 759)','Nc1ncc2ncn([C@@H]3O[C@H](CO)[C@@H](O)[C@H]3O)c2n1__OJI (ribozyme; RNA; MW 267)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](O)[C@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@@H]4CO[C@@H](c5ccccc5)O[C@H]4[C@H](O)[C@H]3N)O[C@@H]2CO)[C@H](N)[C@@H](O)[C@@H]1O__ON0 (rRNA; RNA/Protein; MW 704)','Nc1nc2c(c(=O)[nH]1)=NC(=O)N=2__OXG (riboswitch; RNA; MW 165)','CCCCC(O)=NCCOCCOCCOCCN=C(O)Cn1c2ccccc2s[c+]1C[C-]1C=CN(C)c2ccccc21__OXV (aptamer RNA; RNA; MW 609)','[H]/N=C(\N)N1CC[NH+](Cc2cc(OC)ccc2OCCC[NH3+])CC1__P12 (TAR RNA; RNA; MW 323)','NCCCOc1ccc(-c2ccc3[nH]ccc3c2)cc1CNCCN1CCNCC1__P13 (TAR RNA; RNA; MW 408)','COc1ccc(OCCNC(N)=[NH2+])c(CNCCCCNC(N)=[NH2+])c1__P14 (TAR RNA; RNA; MW 353)','O=c1ccn([C@@H]2O[C@H](CO[P@](=O)(S)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__P5E (unknown; Shared (≥2 big groups); MW 500)','CN(C)[C@@H]1C(O)=C(C(N)=O)C(=O)[C@@]2(O)C(O)=C3C(=O)c4c(cc5ccc(CN6CC(F)C6)cc5c4O)C[C@H]3C[C@@H]12__P8F (rRNA; Shared (≥2 big groups); MW 552)','N[C@@H]1[C@@H](O)[C@H](O)[C@@H](CO)O[C@@H]1O__PA1 (rRNA; RNA/Other; MW 179)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](O)[C@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CO)[C@@H](O)[C@H](O)[C@H]3N)O[C@@H]2CO)[C@H](N)[C@@H](O)[C@@H]1O__PAR (multiple; Shared (≥2 big groups); MW 616)','CC(=O)c1cccc(N[C@H]2[C@H](N)[C@@](NC(=O)N(C)C)([C@H](C)O)[C@@](C)(O)[C@@]2(O)COC(=O)c2c(C)cccc2O)c1__PCY (multiple; RNA/Protein; MW 559)','CCCCCCCCCCCCCCCCCC(=O)O[C@@H](COC(=O)CCCCCCCCCCCCCCC)CO[P@@](=O)(O)OCCN__PEV (rRNA; RNA/Other; MW 720)','OCCOCCOCCOCCO__PG4 (multiple; Shared (≥2 big groups); MW 194)','CCCCCC/C=C\CCCCCCCCCC(=O)O[C@H](COC(=O)CCCCCCCCCCCCCCC)CO[P@](=O)(O)OC[C@@H](O)CO__PGV (rRNA; RNA/Other; MW 749)','N[C@@H](Cc1ccccc1)C(=O)O__PHE (multiple; Shared (≥2 big groups); MW 165)','CC(=O)c1ccc2c(c1)N(CCCN(C)C)c1ccccc1S2__PMZ (TAR RNA; RNA; MW 326)','C[n+]1ccc(-c2c3nc(c(-c4cc[n+](C)cc4)c4ccc([nH]4)c(-c4cc[n+](C)cc4)c4nc(c(-c5cc[n+](C)cc5)c5ccc2[nH]5)C=C4)C=C3)cc1__POH (unknown; Shared (≥2 big groups); MW 679)','C=CC1=C(C)c2cc3[nH]c(cc4nc(cc5[nH]c(cc1n2)c(C)c5C=C)C(C)=C4CCC(=O)O)c(CCC(=O)O)c3C__PP9 (unknown; RNA; MW 563)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CO[P@@](=O)(O)OS(=O)(=O)O)[C@@H](OP(=O)(O)O)[C@H]1O__PPS (riboswitch; RNA; MW 507)','N#Cc1c[nH]c2nc(N)[nH]c(=O)c12__PQ0 (riboswitch; RNA; MW 175)','NCc1c[nH]c2nc(N)[nH]c(=O)c12__PRF (riboswitch; Shared (≥2 big groups); MW 179)','Nc1ccc2cc3ccc(N)cc3nc2c1__PRL (riboswitch; RNA; MW 209)','O=P(O)(O)OC[C@H]1O[C@H](O[P@@](=O)(O)OP(=O)(O)O)[C@H](O)[C@@H]1O__PRP (riboswitch; RNA; MW 390)','[H]/N=C(/N)NCC(=O)N(O)[C@@H](CCC(N)=O)C(=O)NC[C@H]1O[C@@H](c2c[nH]c(=O)[nH]c2=O)[C@H](O)[C@@H]1O__PUM (unknown; RNA/DNA/Protein; MW 486)','Cc1ncc(C[n+]2cccc(CCO[P@@](=O)(O)OP(=O)(O)O)c2C)c(N)n1__PYI (riboswitch; RNA; MW 419)','Cc1n[nH]cc1P(=O)(O)OC[C@H]1O[C@@H](n2cnc3c(=O)[nH]c(N)nc32)[C@H](O)[C@@H]1O__PZG (synthetic; Shared (≥2 big groups); MW 427)','Nc1nc2c(ncn2[C@@H]2OC[C@H](OP(=O)(O)n3cc[n+](P(=O)(O)O[C@H]4CO[C@@H](n5cnc6c(=O)[nH]c(N)nc65)[C@@H]4O)c3N)[C@H]2O)c(=O)[nH]1__Q1V (synthetic; RNA; MW 714)','CC(=O)Nc1nc(=O)c2nc[nH]c2[nH]1__Q44 (riboswitch; RNA; MW 193)','COc1cc2c(O)ncnc2cc1OCCCN1CCCCC1__QAX (aptamer RNA; RNA; MW 317)','COc1cc2c(O)ncnc2cc1OCC1CCN(C)CC1__QB3 (aptamer RNA; RNA; MW 303)','COc1cc2ncnc(N3CCN(CCCCO)CC3)c2cc1OC__QEU (aptamer RNA; RNA; MW 346)','C=C[C@H]1C[N@@]2CC[C@H]1C[C@H]2[C@H](O)c1ccnc2ccc(OC)cc12__QI9 (aptamer RNA; RNA; MW 324)','Cn1c(=O)cnc2c(N)nc(=O)[nH]c21__QIJ (aptamer RNA; RNA; MW 193)','CNC(=O)C[n+]1c(/C=C2\C=CN(C)c3ccccc32)sc2ccccc21__QSA (aptamer RNA; Shared (≥2 big groups); MW 362)','NC(=O)CC[C@H](N)C(=O)NS(=O)(=O)OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O__QSI (tRNA; RNA/Protein; MW 474)','[H]/N=C(/NC)N/N=C(\C)c1ccc2sc3ccc(/C(C)=N/N/C(=N/[H])NC)cc3c2c1__QSV (mRNA; RNA; MW 409)','COc1ccc2[nH]c3c(=O)n(CCC[NH+](C)C4CCCCC4)cnc3c2c1__QSY (mRNA; RNA; MW 369)','CC[C@H]1OC(=O)/C=C/[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@@H](C)C[C@@H](C)C(=O)/C=C/[C@H]2O[C@@H]2[C@]1(O)CO[C@@H]1O[C@H](C)[C@@H](O)[C@@H](OC)[C@H]1OC__QTZ (rRNA; RNA/Protein; MW 728)','CC[C@H]1OC(=O)/C=C/[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@@H](C)C[C@@H](C)C(=O)/C=C/[C@H]2O[C@@H]2[C@@H]1CO[C@@H]1O[C@H](C)[C@@H](O)[C@@H](OC)[C@H]1OC__QU2 (rRNA; RNA/Protein; MW 712)','CC(=O)C[n+]1c(/C=C2\C=CN(C)c3ccccc32)sc2ccccc21__QW4 (aptamer RNA; Shared (≥2 big groups); MW 347)','CCN(CC)CCC(=O)Nc1cccc(-c2cn(-c3ccc4cc5ccc(-n6cc(-c7cccc(NC(=O)CCN(CC)CC)c7)nn6)cc5nc4c3)nn2)c1__R14 (telomerase RNA; RNA; MW 750)','CO[C@H]1C[C@@H]2CC[C@@H](C)[C@@](O)(O2)C(=O)C(=O)N2CCCC[C@H]2C(=O)O[C@H]([C@H](C)C[C@@H]2CC[C@@H](O)[C@H](OC)C2)CC(=O)[C@H](C)/C=C(\C)[C@@H](O)[C@@H](OC)C(=O)[C@H](C)C[C@H](C)/C=C/C=CC=C1C__RAP (rRNA; RNA; MW 914)','Cc1cc2nc3c(=O)[nH]c(=O)nc-3n(C[C@H](O)[C@H](O)[C@H](O)CO)c2cc1C__RBF (riboswitch; RNA; MW 376)','COc1ccc([C@@]23Oc4cc(OC)cc(OC)c4[C@]2(O)[C@H](O)[C@H](C(=O)N(C)C)[C@H]3c2ccccc2)cc1__RCG (synthetic; RNA/Protein; MW 506)','CC(=O)NC[C@H]1CN(c2ccc(-c3ccc(CNCc4c[nH]nn4)cc3)c(F)c2)C(=O)O1__RD8 (multiple; Shared (≥2 big groups); MW 438)','CO[C@H]1/C=C/O[C@@]2(C)Oc3c(C)c(O)c4c(O)c(c(/C=N/N5CCN(C)CC5)c(O)c4c3C2=O)NC(=O)/C(C)=C\C=C[C@H](C)[C@H](O)[C@@H](C)[C@@H](O)[C@@H](C)[C@H](OC(C)=O)[C@@H]1C__RFP (unknown; RNA/DNA/Protein; MW 823)','NC[C@H]1O[C@H](O[C@H]2[C@H](O[C@@H]3O[C@H](CO)[C@@H](O)[C@H]3O)[C@@H](O)[C@H](N)C[C@@H]2N)[C@H](N)[C@@H](O)[C@@H]1O__RIO (multiple; Shared (≥2 big groups); MW 454)','CN(C)c1ccc2c(-c3ccccc3)c3ccc(=[N+](C)C)cc-3oc2c1__ROS (aptamer RNA; RNA; MW 343)','CC[C@H]1OC(=O)[C@H](C)[C@@H](O[C@H]2C[C@@](C)(OC)[C@@H](O)[C@H](C)O2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(O)C[C@@H](C)/C(=N\OCOCCOC)[C@H](C)[C@@H](O)[C@]1(C)O__ROX (rRNA; RNA; MW 837)','NC[C@@H]1O[C@H](O[C@H]2[C@@H](O)[C@H](O[C@@H]3[C@@H](O)[C@H](N)C[C@H](N)[C@H]3O[C@H]3O[C@H](CO)[C@@H](OCc4ccccc4)[C@H](O)[C@H]3N)O[C@@H]2CO)[C@H](N)[C@@H](O)[C@@H]1O__RPO (rRNA; RNA/Protein; MW 706)','Cc1cc2nc3c(=O)[nH]c(=O)nc-3n(C[C@H](O)[C@H](O)[C@H](O)CO)c2cc1N(C)C__RS3 (riboswitch; RNA; MW 405)','NC(=O)c1ncn([C@@H]2O[C@H](CO[P@@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)n1__RTP (unknown; RNA/Protein; MW 484)','CC[C@H]1OC(=O)[C@H](C)[C@@H](O[C@H]2C[C@@](C)(OC)[C@@H](O)[C@H](C)O2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(OC)C[C@@H](C)C(=O)[C@H](C)[C@H]2N(CCCCn3cnc(-c4cccnc4)c3)C(=O)O[C@]12C__RU6 (rRNA; RNA; MW 972)','NC[C@H]1O[C@H](O[C@H]2[C@H](O)[C@@H](O)[C@H](N)C[C@@H]2N)[C@H](N)[C@@H](O)[C@@H]1F__S81 (rRNA; RNA; MW 324)','O=Cc1cccn1C1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O__S8L (synthetic; RNA/Protein; MW 467)','O=P(O)(O)OP(=O)(O)OP(=O)(O)OC[C@H]1OC(n2cnc3c(-c4cccs4)ccnc32)[C@H](O)[C@@H]1O__S96 (synthetic; RNA/DNA/Protein; MW 573)','N[C-]1N=C(O)N2C=CN([C@@H]3O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]3O)C2=N1__S9F (synthetic; RNA/DNA/Protein; MW 524)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](CSCC[C@H](N)C(=O)O)[C@@H](O)[C@H]1O__SAH (multiple; Shared (≥2 big groups); MW 384)','C[S@@+](CC[C@H](N)C(=O)[O-])C[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O__SAM (multiple; Shared (≥2 big groups); MW 398)','CN[C@@H]1[C@H](O)[C@H](NC)[C@H]2O[C@@]3(O)C(=O)C[C@@H](C)O[C@H]3O[C@@H]2[C@H]1O__SCM (rRNA; RNA/Protein; MW 332)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](C[C@@H](N)CC[C@H](N)C(=O)O)[C@@H](O)[C@H]1O__SFG (multiple; Shared (≥2 big groups); MW 381)','NC(=O)c1cn([C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)c2ncnc(N)c12__SGV (synthetic; RNA/Other; MW 309)','CN[C@@H]1[C@@H](O)[C@@H](O[C@@H]2[C@@H](O)[C@H](O[C@H]3OC(CN)=CC[C@H]3N)[C@@H](N)C[C@H]2N)OC[C@]1(C)O__SIS (rRNA; RNA; MW 448)','NC[C@@H]1CC[C@@H](N)[C@@H](O[C@H]2[C@H](O[C@@H]3O[C@H](CO)[C@@H](O[C@H]4O[C@@H](CN)CC[C@H]4N)[C@H]3O)[C@@H](O)[C@H](NC(=O)[C@@H](O)[C@H](F)CN)C[C@@H]2N)O1__SJP (rRNA; RNA; MW 670)','CC(=O)NC[C@H]1CN(c2ccc(/C=C/CCCNC(=O)C/C=C3\C(=O)NC(=O)N=C3C)c(F)c2)C(=O)O1__SLD (rRNA; RNA; MW 514)','NCCSC[C@H](N)C(=O)O__SLZ (riboswitch; RNA; MW 164)','NCCCNCCCNCCCN__SPE (rRNA; RNA; MW 188)','[NH3+]CCC[NH2+]CCCC[NH2+]CCC[NH3+]__SPK (multiple; Shared (≥2 big groups); MW 206)','NCCCNCCCCNCCCN__SPM (multiple; Shared (≥2 big groups); MW 202)','CSC[S@](=O)C[C@H](CO)NC(=O)/C=C/c1c(C)[nH]c(=O)[nH]c1=O__SPS (multiple; Shared (≥2 big groups); MW 361)','[H]/N=C(/N)N[C@H]1[C@H](O)[C@@H](O)[C@H](O[C@@H]2O[C@@H](C)[C@](O)(C=O)[C@H]2O[C@@H]2O[C@@H](CO)[C@H](O)[C@@H](O)[C@@H]2NC)[C@@H](N/C(N)=N\[H])[C@@H]1O__SRY (multiple; Shared (≥2 big groups); MW 582)','CN(C)CCCn1c(N)nc2ccc3c(c21)C[C@H](CN(C)C)CO3__SS0 (riboswitch; RNA; MW 331)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](COS(=O)(=O)NC(=O)[C@@H](N)CO)[C@@H](O)[C@H]1O__SSA (tRNA; RNA/Protein; MW 433)','CN(CC(=O)O)NC(=O)C[C@H](N)C[C@@H](O)CNCCCN__SY5 (multiple; RNA; MW 305)','Nc1nc2c(c(=O)[nH]1)CCCN2__T0A (riboswitch; RNA; MW 166)','C[NH+](C)c1cc(NC(=O)CNC(C)(C)C)c(O)c2c1C[C@H]1C[C@H]3[C@H]([NH+](C)C)C(O)=C(C(N)=O)C(=O)[C@@]3(O)C(O)=C1C2=O__T1C (multiple; Shared (≥2 big groups); MW 588)','COC(=O)c1cc2cc3cc4cc(CC(=O)O)c(C(=O)/C=C(\O)c5ccccc5O)c(OC)c4c(OC)c3c(O)c2c(=O)o1__T8B (rRNA; RNA; MW 601)','CN(C)C1C(O)=C(C(N)=O)C(=O)[C@@]2(O)C(O)=C3C(=O)c4c(O)cccc4[C@@](C)(O)[C@H]3C[C@@H]12__TAC (multiple; Shared (≥2 big groups); MW 444)','NC(CCO)(CCO)CCO__TAM (TAR RNA; Shared (≥2 big groups); MW 163)','CO[C@H]1C[C@H](O[C@H]2[C@H](C)[C@@H](O[C@@H]3O[C@H](C)C[C@H](N(C)C)[C@H]3OC(C)=O)[C@H](C)C[C@@]3(CO3)C(=O)[C@H](C)[C@H](OC(C)=O)[C@@H](C)[C@@H](C)OC(=O)[C@@H]2C)O[C@@H](C)[C@@H]1OC(C)=O__TAO (rRNA; Shared (≥2 big groups); MW 814)','CC[C@H]1OC(=O)[C@H](C)C(=O)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(OC)C[C@@H](C)C(=O)[C@H](C)[C@H]2N(CCCCn3cnc(-c4cccnc4)c3)C(=O)O[C@]12C__TEL (rRNA; Shared (≥2 big groups); MW 812)','Cn1c(=O)c2[nH]cnc2n(C)c1=O__TEP (aptamer RNA; RNA; MW 180)','NCCCCNCCCNCCCN__TER (multiple; Shared (≥2 big groups); MW 202)','Cc1ccc2c(c1)sc(-c1ccc(N(C)C)cc1)[n+]2C__TFX (multiple; RNA; MW 283)','Nc1nc(=O)c2c([nH]1)N=C[C@H](CNc1ccc(C(=O)N[C@@H](CCC(=O)O)C(=O)O)cc1)N2CO__THF (riboswitch; RNA; MW 473)','Nc1nc2c(c(=O)[nH]1)N[C@@H](CNc1ccc(C(=O)N[C@@H](CCC(=O)O)C(=O)O)cc1)CN2__THG (riboswitch; Shared (≥2 big groups); MW 445)','C=C1[C@@H](O)[C@]2(O)OC[C@]34[C@H]2[C@@]2(C)[C@H](O)C(=O)C[C@@H](C)[C@@H]2C[C@H]3OC(=O)C[C@@H]14__TIX (rRNA; RNA; MW 378)','N#Cc1cn([C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)c2ncnc(N)c12__TO1 (synthetic; RNA/Protein; MW 291)','[NH3+][C@@H]1[C@@H](O)[C@@H](O)O[C@H](CO)[C@H]1O__TOA (aptamer RNA; RNA/Other; MW 180)','[NH3+]C[C@H]1O[C@H](O)[C@H]([NH3+])C[C@@H]1O__TOC (aptamer RNA; RNA/Other; MW 164)','NC[C@H]1O[C@H](O[C@H]2[C@H](O)[C@@H](O[C@H]3O[C@H](CO)[C@@H](O)[C@H](N)[C@H]3O)[C@H](N)C[C@@H]2N)[C@H](N)C[C@@H]1O__TOY (multiple; RNA; MW 468)','Cc1ncc(C[n+]2csc(CCO[P@](=O)(O)OP(=O)(O)O)c2C)c(N)n1__TPP (riboswitch; RNA; MW 425)','Cc1ncc(C[n+]2csc(CCOP(=O)(O)O)c2C)c(N)n1__TPS (riboswitch; RNA; MW 345)','N[C@@H](Cc1c[nH]c2ccccc12)C(=O)O__TRP (rRNA; Shared (≥2 big groups); MW 204)','Cc1cn([C@H]2C[C@H](O)[C@@H](CO[P@](=O)(O)O[P@@](=O)(O)OP(=O)(O)O)O2)c(=O)[nH]c1=O__TTP (multiple; RNA/DNA/Protein; MW 482)','CN(C)c1cc(CNCC(C)(C)C)c(O)c2c1C[C@H]1C[C@H]3[C@H](N(C)C)C(=O)C(C(N)=O)=C(O)[C@@]3(O)C(=O)C1=C2O__U3B (rRNA; RNA; MW 557)','O=C1C=CN([C@@H]2O[C@H](CO[P@](=O)(O)O[P@](=O)(O)OP(=O)(O)O)C[C@H]2O)C(O)N1__U3H (unknown; RNA/Protein; MW 470)','O=c1ccn([C@@H]2O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__U5P (synthetic; RNA/Protein; MW 324)','Cn1nnc(-c2ccc(-c3ccc(N4C[C@H](CO)OC4=O)cc3F)cn2)n1__U7V (rRNA; RNA; MW 370)','Cn1nnnc1-c1ccc(-c2ccc(N3C[C@H](CO)OC3=O)cc2F)cn1__U7Y (rRNA; RNA; MW 370)','CC(C)C[C@H](NC(=O)[C@@H](O)[C@@H](O)[C@@H](N)CC(N)=O)[C@@H]1Cc2cccc(O)c2C(=O)O1__UAM (multiple; RNA/Protein; MW 423)','C#CC[C@@H]1/C=C/C(=O)NC/C=C/C(C)=C/[C@@H](O)C[C@@H](F)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@@H]1C(C)C__UCX (rRNA; RNA/Other; MW 556)','C[C@H]1OC(=O)[C@H](c2ccccc2)N=C(O)[C@@H]2C[C@H](O)CCN2C(=O)[C@H](Cc2ccccc2)N(C)C(=O)[C@@H]2CCCN2C(=O)[C@@H](CC[N]N=N)N=C(O)[C@H]1N=C(O)c1ncccc1O__UDF (rRNA; RNA/Other; MW 868)','O=c1ccn([C@@H]2O[C@H](CO[P@@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__UDP (synthetic; RNA/Protein; MW 404)','CC1=C\[C@@H](O)C[C@@H](F)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@H](C(C)C)[C@H](CC(=O)NCCn2cc(CN)nn2)/C=C/C(=O)NC\C=C\1__UE6 (rRNA; RNA; MW 699)','CC1=C\[C@@H](O)C[C@@H](F)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@H](C(C)C)[C@H](CC(=O)NCCn2cc(-c3ccncc3)nn2)/C=C/C(=O)NC\C=C\1__UEC (rRNA; RNA; MW 747)','NC(=O)c1ncn(-c2ccncc2)c1N__UG1 (riboswitch; RNA; MW 203)','NC(=O)c1ncn(-c2cccnc2)c1N__UG4 (riboswitch; RNA; MW 203)','C[C@@H]1C[C@H](N(C)CC(=O)NC[C@H]2CN(c3ccc(-c4ccc(-c5nnn(C)n5)nc4)c(F)c3)C(=O)O2)[C@@H](O)[C@H](O)O1__UH0 (rRNA; RNA; MW 571)','C=CC[C@@H]1/C=C/C(=O)NC/C=C/C(C)=C/[C@@H](O)C[C@@H](F)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@@H]1[C@H](C)COC(=O)Nc1cc2ccccc2cn1__UI0 (rRNA; RNA; MW 744)','Cn1nnc(-c2ccc(-c3ccc(N4C[C@H](CNC(=O)CCl)OC4=O)cc3F)cn2)n1__UI9 (rRNA; RNA; MW 446)','C[C@@H]1C[C@@H](N(C)CC(=O)NC[C@H]2CN(c3ccc(-c4ccc(-c5nnn(C)n5)nc4)c(F)c3)C(=O)O2)[C@H](OC(=O)c2ccccc2)[C@H](OC(=O)c2ccccc2)O1__UIF (rRNA; RNA; MW 779)','CC[C@H]1CN(c2ccc(C(=O)Nc3cn4cc(C)nc4cn3)c(F)c2)CCN1__ULR (snRNA; RNA; MW 382)','O=c1ccn([C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)c(=O)[nH]1__URI (unknown; RNA/Other; MW 244)','O=c1ccn([C@@H]2O[C@H](CO[P@@](=O)(O)O[P@@](=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__UTP (multiple; Shared (≥2 big groups); MW 484)','CN(C)c1nc(N)c(C(=O)N=C(N)N)nc1C#Cc1ccccc1__UYS (rRNA; RNA; MW 323)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](C[O][V](=[O])[OH])[C@@H](O)[C@H]1O__V5A (unknown; RNA/DNA/Protein; MW 350)','COc1cc(/C=C2\N=C(/C=N\O)N(c3ccc([N+](C)(C)C)cc3)C2=O)cc(OC)c1O__V5Z (aptamer RNA; RNA; MW 425)','CC(/C=C/C(C)=C/[C@@H]1Cc2nc(cs2)CC[C@@H](N)CC(=O)O[C@@H](C)C/C(C)=C/C=C\C(=O)O1)=C\CN(C)C__V6D (synthetic; RNA/Protein; MW 542)','COc1cc(/C=C2\N=C(C)N(c3ccc([N+](C)(C)C)cc3)C2=O)cc(OC)c1O__V6T (aptamer RNA; RNA; MW 396)','NC[C@H]1O[C@H](O[C@H]2[C@H](O)[C@@H](O)[C@H](N)C[C@@H]2N)[C@H](N)[C@@H](O)[C@H]1F__V71 (rRNA; RNA; MW 324)','CON(C)Cc1ccc(O)c2c1C[C@H]1C[C@H]3[C@H](N(C)C)C(O)=C(C(N)=O)C(=O)[C@@]3(O)C(O)=C1C2=O__V7A (multiple; RNA; MW 488)','O=C1c2cc(NCCCN3CCOCC3)c3c4c(cc(NCCCN5CCOCC5)c(c24)C(=O)N1CCCN1CCOCC1)C(=O)N(CCCN1CCOCC1)C3=O__V8A (unknown; RNA; MW 805)','CN(C)c1ccc2c(-c3ccc(C(N)=O)cc3C(=O)[O-])c3ccc(=[N+](C)C)cc-3oc2c1__V8C (unknown; Shared (≥2 big groups); MW 429)','C=C1[C@@H](O)C[C@H]2C(C)(C)C[C@H](F)C[C@]2(C)[C@H]1C[C@H](O)[C@H]1CC(=O)NC1=O__VDU (rRNA; RNA/Other; MW 367)','Cc1ncc(C[n+]2csc(CCO)c2C)c(N)n1__VIB (riboswitch; RNA; MW 265)','CC1=C\[C@@H](O)C[C@@H](F)Cc2nc(co2)C(=O)N2CCC[C@@H]2C(=O)O[C@H](C(C)C)[C@H](C)/C=C/C(=O)NC\C=C\1__VIF (rRNA; Shared (≥2 big groups); MW 532)','CC1=C\[C@@H](O)CC(=O)Cc2nc(co2)C(=O)N2CCC=C2C(=O)O[C@H](C(C)C)[C@H](C)/C=C/C(=O)NC\C=C\1__VIR (rRNA; Shared (≥2 big groups); MW 526)','COc1ccc(-c2ccc3c(c2)/C(=C/c2sc4ccccc4[n+]2C)C=CN3C)cc1__VK0 (aptamer RNA; RNA; MW 412)','COc1ccc(-c2ccc3c(c2)/C(=C/c2sc4ccccc4[n+]2CC(=O)NCCOCCOCCOCCNC(=O)CCCCC2SCC4NC(=O)NC42)C=CN3C)cc1__VKI (aptamer RNA; RNA; MW 856)','COc1ccc(-c2ccc3c(c2)C(=Cc2sc4ccccc4[n+]2CC(=O)NCCOCCOCCOCCNC(=O)CCCC[C@H]2SC[C@H]4NC(=O)N[C@@H]42)C=CN3C)cc1__VLR (aptamer RNA; RNA; MW 856)','Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)OP(O)(O)=S)[C@@H](O)[C@H]2O)c(=O)[nH]1__VSN (mRNA; RNA/Protein; MW 459)','O=C(NCCN1CCCC1)c1ccc2oc(C(=O)c3cc(O)c(O)c(O)c3)cc2c1__VTE (ribozyme; RNA; MW 410)','O=C(NCCN1CCCC1)c1ccc2oc(C(=O)c3c(Br)c(O)c(O)c(O)c3Br)cc2c1__VTR (ribozyme; RNA; MW 568)','CO[C@@H]1[C@H](O)[C@H](n2cnc3c(=O)nc(N)[nH]c32)O[C@H]1COP(=O)(O)OP(=O)(O)OP(=O)(O)O__W0F (synthetic; RNA/DNA/Protein; MW 537)','NCCCNC(=O)C(Cc1ccc2ccc(N)nc2n1)Cc1ccc2ccc(N)nc2n1__W53 (unknown; RNA; MW 431)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](COS(=O)(=O)NC(=O)[C@@H](N)Cc2ccccc2)[C@@H](O)[C@H]1O__W5Y (tRNA; RNA/Protein; MW 494)','Cc1ccc2c(c1)N(C)C=C/C2=C\c1sc2ccccc2[n+]1CC(=O)NCCOCCOCCOCCNC(=O)CCCC[C@@H]1SC[C@@H]2NC(=O)N[C@@H]21__W6F (aptamer RNA; Shared (≥2 big groups); MW 764)','CC(C)C[C@@H]1CCO[C@@H]2[C@H](CN[C@@H]2C(=O)N[C@H]2[C@H]3O[C@H](SCC/C=C\[C@H]2C)[C@H](O)[C@@H](O)[C@H]3O)C1__WC9 (multiple; RNA/Protein; MW 499)','O=C1COc2ccc(CNC34CCC(C[C@]5(O)Cn6c(=O)ccc7ncc(F)c5c76)(CC3)OC4)nc2N1__WCP (RNA/DNA hybrid; RNA/Protein; MW 508)','COC(=O)[C@@]12OC[C@]34[C@H]([C@@H](O)[C@@H]1O)[C@@]1(C)CC(=O)C(O)=C(C)[C@@H]1C[C@H]3OC(=O)[C@H](OC(=O)/C=C(\C)C(C)C)[C@@H]24__WIN (rRNA; RNA; MW 549)','O=c1ccn([C@@H]2O[C@H](COP(=O)(O)CP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1__WSB (unknown; RNA/Protein; MW 482)','CC(=O)O[C@H]1C[C@@]2(C)[C@@H](C[C@@H](O)[C@H]3[C@@]4(C)CC[C@@H](O)[C@@H](C)[C@@H]4CC[C@@]32C)C1C(CCCC1CCCC1)C(=O)O__WUX (rRNA; RNA/Other; MW 547)','N=c1nc(O)c2ncn([C@@H]3O[C@H](COP(=O)(O)N4C=CN(P(=O)(O)OC[C@H]5O[C@@H](n6cnc7c(N)ncnc76)[C@H](O)[C@@H]5O)[C]4N)[C@@H](O)[C@H]3O)c2[nH]1__WZW (synthetic; RNA; MW 759)','Nc1[nH]c(=O)nc2c1ncn2C1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O__X0F (synthetic; RNA/DNA/Protein; MW 523)','Cn1cc([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(N)nc1=O__X0O (synthetic; RNA/DNA/Protein; MW 497)','C=C1[C@@H](O)C[C@H]2C(C)(C)CCC[C@]2(C)[C@H]1C[C@H](O)[C@H]1CC(=O)NC1=O__X1K (rRNA; RNA/Other; MW 349)','COC(=O)/C=C/C1=N/C(=C\c2cc(F)c(O)c(F)c2)C(=O)N1C__X5R (synthetic; RNA; MW 322)','C=C1[C@@H](O)C[C@H]2C(C)(C)C[C@H](C)C[C@]2(C)[C@H]1C[C@H](O)[C@H]1CC(=O)NC1=O__XBI (rRNA; RNA/Other; MW 363)','Nc1nc2c(ncn2[C@H]2C[C@H](O)[C@@H](CO[P@](=O)(O)N[P@@](=O)(O)OP(=O)(O)O)O2)c(=O)[nH]1__XG4 (multiple; RNA/DNA/Protein; MW 506)','NC[C@H]1O[C@H](O[C@H]2[C@H](O)[C@@H](O)[C@H](N)C[C@@H]2N)[C@H](N)[C@@H](O)[C@@H]1O__XXX (multiple; Shared (≥2 big groups); MW 322)','CC1(C)CC(Oc2ccc(-c3ccc(-c4cn[nH]c4)cc3O)nn2)CC(C)(C)N1__Y53 (unknown; RNA; MW 393)','Cc1cn2nc(C3=CC(=O)N4C=C(N5CC[NH2+]C6(CC6)C5)C=C[C]4[N-]3)cc(C)c2n1__Y59 (unknown; RNA; MW 402)','CN[C@@H]1[C@H](O)[C@H](NC)[C@H]2O[C@]3(O)[C@H](O[C@@H]2[C@H]1O)O[C@H](C)C[C@@]3(O)CNCCC1CCOCC1__Y7K (rRNA; RNA/Protein; MW 476)','CC[C@H]1CN2CCc3cc(OC)c(OC)cc3[C@@H]2C[C@@H]1C[C@H]1NCCc2cc(OC)c(OC)cc21__YAT (multiple; RNA/Protein; MW 481)','Cc1cn2cc(-c3ncc4cc(N5CCN(C)CC5)ccc4n3)cc(F)c2n1__YB3 (unknown; RNA; MW 376)','O[C@H](c1cc(C(F)(F)F)nc2c(C(F)(F)F)cccc12)[C@@H]1CCCCN1__YMZ (rRNA; Shared (≥2 big groups); MW 378)','CN1C=C/C(=C\C=C\c2oc3ccccc3[n+]2C)c2ccccc21__YO3 (aptamer RNA; RNA; MW 315)','CN(C)[C@@H]1C(=O)C(C(N)=O)=C(O)[C@@]2(O)C(=O)C3=C(O)c4c(O)c(NC(=O)CN5CCCC5)cc(F)c4C[C@H]3C[C@@H]12__YQM (rRNA; Shared (≥2 big groups); MW 559)','O=C(CCCC[PH](c1ccccc1)(c1ccccc1)c1ccccc1)N[C@H](CO)[C@H](O)c1ccc([N+](=O)[O-])cc1__YXM (rRNA; RNA/Protein; MW 559)','C[C@H]1C[C@@](C)(NC(=O)c2ccccc2)C[C@@H]([C@H](O)CC2CC(=O)NC(=O)C2)C1=O__Z2V (rRNA; RNA/Protein; MW 400)','Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)NP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O__ZAN (synthetic; Shared (≥2 big groups); MW 506)','C=C(C)CC(=O)O[C@H]1C[C@@]2(COC(C)=O)[C@@H](C=C1C)O[C@@H]1[C@H](O)[C@@H](OC(C)=O)[C@@]2(C)[C@]12CO2__ZBA (rRNA; RNA; MW 465)','O=C1C=CN(c2c(F)cc(N3C[C@H](CNc4ccon4)OC3=O)c(F)c2F)CC1__ZC0 (rRNA; RNA; MW 408)','CC[C@H]1OC(=O)[C@H](C)[C@@H](O[C@H]2C[C@@](C)(OC)[C@@H](O)[C@H](C)O2)[C@H](C)[C@@H](O[C@@H]2O[C@H](C)C[C@H](N(C)C)[C@H]2O)[C@](C)(O)C[C@@H](C)CN(C)[C@H](C)[C@@H](O)[C@]1(C)O__ZIT (rRNA; Shared (≥2 big groups); MW 749)','CC(=O)NC[C@H]1CN(c2ccc(N3CCOCC3)c(F)c2)C(=O)O1__ZLD (multiple; Shared (≥2 big groups); MW 337)','CN1C2=NC(C3CCC3)N(c3ccccc3)C(=O)C2C(=O)c2ccccc21__ZVM (rRNA; RNA/Protein; MW 359)','C=C1[C@@H](O)C[C@H]2C(C)(C)C[C@H](Br)C[C@]2(C)[C@H]1C[C@H](O)[C@H]1CC(=O)NC1=O__ZWB (rRNA; RNA/Other; MW 428)'],
+colors: [
+{
+r: [217,201,78,78,78,78,134,134,160,225,242,242,242,89,242,201,160,242,242,225,160,225,225,160,225,242,78,160,78,78,78,78,78,78,78,78,78,78,160,242,160,225,242,255,217,160,201,78,78,78,242,201,242,78,160,176,242,160,225,78,78,78,242,78,78,160,89,201,201,160,217,160,201,78,78,78,217,89,217,160,160,160,160,134,242,225,225,225,225,217,78,217,217,78,78,217,225,78,176,78,78,201,255,217,78,217,176,225,225,225,255,118,78,160,217,118,176,78,160,201,201,242,242,242,201,89,78,78,242,160,160,160,89,160,201,242,242,160,160,78,160,201,160,217,78,78,78,201,242,160,217,217,242,201,242,160,201,225,201,160,78,242,78,78,217,242,242,160,78,78,78,242,217,201,176,217,160,160,160,242,78,242,217,255,160,242,89,160,217,217,242,160,255,242,78,160,242,225,225,78,160,201,201,78,78,78,78,78,78,217,201,242,225,160,160,78,78,78,242,242,237,78,160,78,201,225,160,78,78,176,78,78,89,78,176,160,212,78,217,160,217,78,176,242,160,225,242,160,160,78,160,160,242,242,242,242,78,201,160,78,78,78,242,242,160,242,78,242,242,255,78,160,225,225,78,242,160,89,78,78,242,225,217,217,225,225,225,225,225,225,225,89,78,89,78,78,78,78,78,78,160,242,242,242,225,237,237,78,78,160,78,78,237,89,78,242,201,201,242,78,78,156,160,225,78,118,160,201,78,118,78,242,78,78,217,78,78,78,217,242,160,242,217,160,160,225,242,160,78,242,242,201,225,225,78,78,78,78,78,78,78,78,160,78,78,176,78,242,225,237,237,237,217,78,78,160,160,78,160,78,160,237,217,217,242,242,242,242,242,217,242,201,201,242,225,225,225,225,225,225,89,118,118,78,78,225,134,78,242,201,160,217,160,225,78,78,242,217,78,78,201,201,201,160,160,78,160,201,78,78,78,242,78,160,160,160,160,242,89,160,242,160,78,160,237,78,78,225,160,160,242,242,78,201,225,225,160,242,242,78,160,78,217,201,78,78,160,78,78,201,78,78,242,242,78,78,78,78,156,217,160,78,217,225,201,225,78,160,217,217,78,242,78,78,225,225,225,118,176,176,201,217,89,225,160,255,78,217,78,201,201,201,78,201,78,160,160,217,217,78,160,217,78,225,78,78,78,201,78,78,78,160,78,78],
+g: [217,194,121,121,121,121,188,188,160,87,142,142,142,161,142,194,160,142,142,87,160,87,87,160,87,142,121,160,121,121,121,121,121,121,121,121,121,121,160,142,160,87,142,157,217,160,194,121,121,121,142,194,142,121,160,122,142,160,87,121,121,121,142,121,121,160,161,194,194,160,217,160,194,121,121,121,217,161,217,160,160,160,160,188,142,87,87,87,87,217,121,217,217,121,121,217,87,121,122,121,121,194,157,217,121,217,122,87,87,87,157,183,121,160,217,183,122,121,160,194,194,142,142,142,194,161,121,121,142,160,160,160,161,160,194,142,142,160,160,121,160,194,160,217,121,121,121,194,142,160,217,217,142,194,142,160,194,87,194,160,121,142,121,121,217,142,142,160,121,121,121,142,217,194,122,217,160,160,160,142,121,142,217,157,160,142,161,160,217,217,142,160,157,142,121,160,142,87,87,121,160,194,194,121,121,121,121,121,121,217,194,142,87,160,160,121,121,121,142,142,201,121,160,121,194,87,160,121,121,122,121,121,161,121,122,160,166,121,217,160,217,121,122,142,160,87,142,160,160,121,160,160,142,142,142,142,121,194,160,121,121,121,142,142,160,142,121,142,142,157,121,160,87,87,121,142,160,161,121,121,142,87,217,217,87,87,87,87,87,87,87,161,121,161,121,121,121,121,121,121,160,142,142,142,87,201,201,121,121,160,121,121,201,161,121,142,194,194,142,121,121,117,160,87,121,183,160,194,121,183,121,142,121,121,217,121,121,121,217,142,160,142,217,160,160,87,142,160,121,142,142,194,87,87,121,121,121,121,121,121,121,121,160,121,121,122,121,142,87,201,201,201,217,121,121,160,160,121,160,121,160,201,217,217,142,142,142,142,142,217,142,194,194,142,87,87,87,87,87,87,161,183,183,121,121,87,188,121,142,194,160,217,160,87,121,121,142,217,121,121,194,194,194,160,160,121,160,194,121,121,121,142,121,160,160,160,160,142,161,160,142,160,121,160,201,121,121,87,160,160,142,142,121,194,87,87,160,142,142,121,160,121,217,194,121,121,160,121,121,194,121,121,142,142,121,121,121,121,117,217,160,121,217,87,194,87,121,160,217,217,121,142,121,121,87,87,87,183,122,122,194,217,161,87,160,157,121,217,121,194,194,194,121,194,121,160,160,217,217,121,160,217,121,87,121,121,121,194,121,121,121,160,121,121],
+b: [217,182,167,167,167,167,182,182,160,89,43,43,43,79,43,182,160,43,43,89,160,89,89,160,89,43,167,160,167,167,167,167,167,167,167,167,167,167,160,43,160,89,43,167,217,160,182,167,167,167,43,182,43,167,160,161,43,160,89,167,167,167,43,167,167,160,79,182,182,160,217,160,182,167,167,167,217,79,217,160,160,160,160,182,43,89,89,89,89,217,167,217,217,167,167,217,89,167,161,167,167,182,167,217,167,217,161,89,89,89,167,178,167,160,217,178,161,167,160,182,182,43,43,43,182,79,167,167,43,160,160,160,79,160,182,43,43,160,160,167,160,182,160,217,167,167,167,182,43,160,217,217,43,182,43,160,182,89,182,160,167,43,167,167,217,43,43,160,167,167,167,43,217,182,161,217,160,160,160,43,167,43,217,167,160,43,79,160,217,217,43,160,167,43,167,160,43,89,89,167,160,182,182,167,167,167,167,167,167,217,182,43,89,160,160,167,167,167,43,43,72,167,160,167,182,89,160,167,167,161,167,167,79,167,161,160,200,167,217,160,217,167,161,43,160,89,43,160,160,167,160,160,43,43,43,43,167,182,160,167,167,167,43,43,160,43,167,43,43,167,167,160,89,89,167,43,160,79,167,167,43,89,217,217,89,89,89,89,89,89,89,79,167,79,167,167,167,167,167,167,160,43,43,43,89,72,72,167,167,160,167,167,72,79,167,43,182,182,43,167,167,95,160,89,167,178,160,182,167,178,167,43,167,167,217,167,167,167,217,43,160,43,217,160,160,89,43,160,167,43,43,182,89,89,167,167,167,167,167,167,167,167,160,167,167,161,167,43,89,72,72,72,217,167,167,160,160,167,160,167,160,72,217,217,43,43,43,43,43,217,43,182,182,43,89,89,89,89,89,89,79,178,178,167,167,89,182,167,43,182,160,217,160,89,167,167,43,217,167,167,182,182,182,160,160,167,160,182,167,167,167,43,167,160,160,160,160,43,79,160,43,160,167,160,72,167,167,89,160,160,43,43,167,182,89,89,160,43,43,167,160,167,217,182,167,167,160,167,167,182,167,167,43,43,167,167,167,167,95,217,160,167,217,89,182,89,167,160,217,217,167,43,167,167,89,89,89,178,161,161,182,217,79,89,160,167,167,217,167,182,182,182,167,182,167,160,160,217,217,167,160,217,167,89,167,167,167,182,167,167,167,160,167,167],
+},
+]},
+tmap_family_tree: {
+x: [524.508,528.326,150.004,144.632,150.004,153.974,268.957,272.876,221.292,216.452,221.292,215.847,221.292,219.819,221.292,230.01,289.922,294.845,118.636,119.847,118.636,117.485,610.54,618.669,610.54,599.818,470.106,473.986,351.635,349.462,351.635,353.259,43.95,44.579,43.95,43.409,44.579,44.855,334.538,330.538,89.331,96.805,89.331,84.653,299.324,301.559,298.063,297.108,359.521,358.373,508.426,508.367,508.426,508.281,315.824,338.509,315.824,307.452,315.824,294.523,478.293,473.986,474.858,473.986,505.013,517.333,505.013,495.388,473.986,476.26,473.986,470.383,233.08,238.209,233.08,230.207,272.876,293.748,272.876,275.107,272.876,274.023,272.876,251.583,293.748,295.179,293.748,313.936,204.201,209.964,209.002,213.413,235.077,251.583,235.077,220.103,533.132,533.919,533.132,513.961,533.132,564.846,533.132,529.346,533.132,517.333,594.94,598.695,594.94,594.836,594.94,594.847,220.103,213.413,220.103,209.964,220.103,216.687,387.528,381.787,663.281,672.348,663.281,653.582,547.459,542.158,664.761,661.202,96.805,106.884,369.652,364.56,459.23,461.087,534.537,534.266,327.764,324.169,364.56,330.538,364.56,395.791,364.56,362.328,144.632,152.845,144.632,138.902,144.632,137.672,314.543,310.795,558.317,568.974,558.317,546.659,371.521,381.787,371.521,360.006,666.743,666.757,3.007,7.64,3.007,0.0,310.795,307.08,310.795,310.397,13.645,7.64,13.645,21.095,662.674,667.257,662.674,673.968,662.674,646.88,662.674,664.897,668.717,663.94,668.717,672.348,438.971,416.996,438.971,460.604,534.266,534.107,476.26,472.175,476.26,481.797,556.114,557.26,237.771,239.643,331.754,313.936,331.754,346.754,570.788,566.108,22.601,30.458,689.39,693.166,629.387,612.841,629.387,646.88,629.387,631.956,612.841,595.466,180.433,177.095,152.845,134.78,152.845,177.095,152.845,146.932,152.845,153.055,301.48,301.559,164.177,168.714,137.672,132.757,555.54,532.437,555.54,576.297,247.901,244.82,653.582,643.476,461.757,465.227,268.271,272.585,335.95,338.509,657.84,655.915,657.84,663.94,657.84,652.901,666.66,663.94,293.885,294.845,333.876,328.991,479.451,477.634,479.451,482.408,486.385,482.408,486.385,491.511,716.625,714.008,619.072,593.21,619.072,643.476,551.263,559.345,551.263,538.726,551.263,556.842,538.726,525.966,538.726,540.056,722.222,718.464,718.464,713.613,711.914,714.008,539.761,535.983,559.345,564.641,236.56,244.82,236.56,231.837,261.472,264.038,129.329,134.062,129.329,124.751,124.751,119.847,528.114,524.105,528.114,535.445,337.469,336.636,727.752,732.209,727.752,738.104,727.752,713.613,472.175,468.895,503.688,520.537,503.688,507.193,503.688,486.919,426.15,428.614,679.823,697.154,679.823,661.202,679.823,683.239,680.621,672.348,680.621,686.149,666.757,666.115,113.919,112.057,697.154,713.613,366.622,364.56,577.923,578.444,577.923,568.974,577.923,585.65,456.612,457.971,233.516,238.209,29.693,30.458,456.543,459.511,463.037,459.412,139.799,135.604,310.741,319.854,310.741,303.378,310.741,308.67,472.876,478.093,478.093,485.345,330.538,301.559,330.538,327.96,330.538,319.854,330.538,325.889,272.585,238.209,272.585,301.559,272.585,273.121,272.585,294.523,272.585,276.923,595.466,576.297,520.545,525.072,292.683,301.559,301.559,296.84,540.396,543.243,540.396,535.445,312.415,301.559,30.458,21.095,30.458,44.855,30.458,25.955,30.458,34.335,713.613,714.008,241.905,243.833,491.572,505.903,491.572,459.345,491.572,513.961,135.604,128.85,238.209,237.417,238.209,207.226,571.498,569.464,571.498,576.331,571.498,570.78,586.359,591.329,586.359,569.642,586.359,599.818,507.036,519.453,507.036,495.592,478.406,482.632,593.21,564.846,593.21,594.836,375.219,370.223,311.549,315.448,591.329,594.559,566.108,557.26,566.108,570.471,106.884,119.504,367.41,338.509,367.41,370.441,338.509,328.414,321.659,328.414,321.659,315.448,321.659,321.222,505.903,521.088,643.476,645.29,643.476,661.202,531.893,533.018,324.169,305.068,324.169,320.348,324.169,341.625,324.169,327.38,335.387,332.769,694.067,690.41,694.067,696.867,694.067,698.273,694.067,690.485,564.846,570.324,328.414,332.769,328.414,326.04,328.414,317.326,225.967,228.486,225.967,230.01,225.967,216.411,508.367,507.453,363.427,360.011,286.689,294.845,286.689,281.949,466.554,465.227,315.448,319.652,315.448,307.08,119.847,128.85,119.847,111.001,100.249,105.29,100.249,86.774,100.249,107.141,215.641,220.766,690.253,686.149,556.842,560.869,276.004,276.042,394.622,395.791,280.686,283.835,98.841,103.663,307.08,294.845,307.08,303.604,103.663,111.001,329.842,330.538,677.507,673.968,426.486,427.01,562.656,567.362,562.656,557.26,570.912,567.362,570.912,572.68,248.891,239.643,248.891,258.76,134.062,138.902,134.062,132.071,138.902,141.165,138.902,134.6,220.766,228.486,228.486,236.296,228.486,229.631,679.689,673.968,663.31,666.115,663.31,661.202,252.836,234.47,252.836,272.585,112.057,109.366,520.537,524.445,520.537,535.983,458.067,459.345,234.47,217.158,322.742,319.652,363.417,360.006,535.445,533.531,535.445,537.621,535.445,521.088,535.445,553.184,546.659,533.018,383.283,381.787,142.408,146.932,383.368,381.787,207.226,177.095,493.489,497.659,119.504,134.78,346.754,360.006,260.148,252.383,260.148,268.547,393.48,416.996,393.48,398.11,393.48,367.41,252.383,244.82,381.787,387.206,535.983,546.827,535.983,539.791,330.418,333.128,330.418,327.38,317.326,309.119,648.353,646.88,171.657,168.714,31.212,30.458,375.621,370.223,113.387,119.847,113.387,107.141,177.095,168.714,177.095,180.349,180.349,182.787,292.96,297.567,207.424,211.791,207.424,205.123,202.466,217.158,202.466,191.414,113.37,109.366,277.865,274.023,497.597,501.8,649.764,646.88,644.714,646.88,651.91,646.88,457.971,459.511,459.511,459.412,595.112,594.847,459.412,461.087,72.292,72.726,72.292,58.646,72.292,86.774,72.292,74.845,521.088,518.222,540.917,543.257,540.917,537.202,557.26,545.089,482.632,460.604,482.632,507.453,394.839,393.48,368.319,364.56,377.651,380.561,377.651,374.955,377.651,375.003,568.864,569.464,438.578,436.99,438.578,432.793,438.578,420.658,438.578,439.515,438.578,465.227,438.578,430.482,390.236,404.888,390.236,375.003,404.888,420.658,428.614,432.793,305.068,286.68,232.756,236.296,296.916,297.567,496.272,495.611,495.611,495.592,495.592,485.345,495.388,487.84,576.297,580.941,584.138,580.941,341.625,358.373,358.373,375.003,570.324,573.934,543.694,539.805,270.15,274.023,485.345,481.199,525.072,533.018,216.411,211.501,216.411,211.403,303.378,297.567,529.534,533.018,211.791,217.158,211.791,211.81,288.942,284.94,536.392,533.018,292.745,297.108,623.731,618.669,486.919,495.272,486.919,465.227,251.583,248.924,251.583,243.833,430.482,425.654,696.867,693.166,696.867,693.838,696.867,703.217,191.414,184.161,523.564,525.966,243.833,236.296,395.791,427.01,583.027,578.883,469.563,472.876,537.202,532.437,501.8,507.453,273.548,272.585,273.548,274.204,576.331,579.658,572.902,571.51,465.227,470.383,465.227,469.528,474.698,470.383,274.204,274.405,533.018,519.453,533.018,532.437,533.018,542.158,533.018,534.889,240.444,238.209,470.383,472.876,470.383,466.473,280.029,273.368,280.029,284.94,280.029,277.977,280.029,289.727,298.462,289.727,298.462,306.187,310.304,306.187,277.977,276.042,276.042,274.023,316.984,312.724,312.724,306.187,745.519,750.0,745.519,738.104,585.65,590.211,544.476,545.089,525.966,513.961,509.39,513.961,283.835,288.827,693.808,693.166,460.604,460.039,284.361,286.719,286.719,292.683,460.611,461.087,460.611,459.345,180.166,184.161,44.855,58.646,573.934,578.883,349.462,360.011,349.462,338.509,533.919,534.107,533.919,528.326,533.919,539.805,529.346,525.578,18.08,22.601,491.511,497.659,245.986,248.924,497.659,504.038,497.659,499.443,217.158,213.525,244.299,244.82,532.437,507.453,230.01,239.643,504.369,501.492,504.369,507.453,151.758,155.13,155.13,160.827,304.117,309.119,427.01,422.726,574.219,578.443,574.219,568.974,341.329,336.636,240.979,244.82,459.345,427.01,569.642,553.184,569.642,570.78,569.642,571.51,523.801,525.966,553.184,554.737,690.41,686.149,495.272,504.038,105.29,109.366,312.964,313.936,336.636,330.538,360.011,370.223,370.223,371.266,703.217,707.053,294.84,297.108,294.84,292.568,286.68,285.748,286.68,268.547,273.368,268.07,666.865,663.281,297.108,288.827,297.108,307.452,268.07,264.038,321.501,328.991,321.501,312.415,258.76,255.429,258.76,268.547,335.241,333.128,481.797,487.84,319.02,313.936,504.038,518.582,518.582,532.006,532.006,545.089,546.827,552.656,166.611,168.714,305.115,301.559,160.827,168.714,326.255,328.414,317.627,313.936,313.936,315.381,243.764,244.299,336.761,335.241],
+y: [345.925,348.768,465.341,469.116,465.341,462.763,99.197,99.066,217.151,215.708,217.151,219.897,217.151,221.818,217.151,212.605,727.244,726.769,382.93,387.885,382.93,378.953,492.263,491.535,492.263,492.92,266.686,264.338,621.73,626.805,621.73,617.649,316.001,324.032,316.001,310.966,324.032,334.079,475.515,472.964,514.864,511.82,514.864,516.791,501.146,504.969,591.285,587.674,271.197,267.757,627.882,635.823,627.882,622.875,590.15,619.022,590.15,588.217,590.15,562.939,265.594,264.338,269.148,264.338,338.528,352.749,338.528,324.922,264.338,282.639,264.338,244.125,519.505,525.678,519.505,515.546,99.066,99.672,99.066,102.36,99.066,82.68,99.066,113.509,99.672,103.308,99.672,100.24,105.84,105.083,93.86,97.158,108.205,113.509,108.205,103.291,366.546,352.162,366.546,391.877,366.546,362.158,366.546,370.476,366.546,352.749,339.003,337.367,339.003,347.769,339.003,331.272,103.291,97.158,103.291,105.083,103.291,105.19,93.048,91.135,315.522,298.901,315.522,331.954,683.075,683.428,361.365,362.52,511.82,507.82,456.855,458.785,439.628,442.52,326.056,331.224,280.485,281.242,458.785,472.964,458.785,446.489,458.785,454.843,469.116,489.68,469.116,451.598,469.116,468.769,730.405,726.32,706.867,715.813,706.867,696.776,93.478,91.135,93.478,95.415,390.48,385.885,374.519,368.957,374.519,378.064,726.32,715.935,726.32,731.85,361.873,368.957,361.873,353.198,601.83,603.136,601.83,595.89,601.83,610.156,601.83,597.478,292.871,286.473,292.871,298.901,626.953,622.126,626.953,632.817,331.224,340.073,282.639,288.529,282.639,297.412,123.529,127.273,232.206,228.766,99.117,100.24,99.117,97.51,125.798,127.911,336.859,342.19,211.498,215.502,618.544,625.464,618.544,610.156,618.544,616.673,625.464,632.562,508.374,506.254,489.68,496.97,489.68,506.254,489.68,488.081,489.68,493.169,509.585,504.969,518.407,518.815,468.769,468.747,648.735,657.661,648.735,640.254,312.736,309.966,331.954,348.747,221.863,224.438,537.585,537.538,615.5,619.022,281.266,276.803,281.266,286.473,281.266,280.923,283.137,286.473,731.733,726.769,516.97,515.872,116.472,111.993,116.472,123.286,131.705,123.286,131.705,141.407,394.738,390.541,352.81,356.004,352.81,348.747,405.56,404.07,405.56,401.297,405.56,411.57,401.297,397.655,401.297,404.685,375.013,377.971,377.971,382.903,394.974,390.541,202.286,205.273,404.07,403.642,314.253,309.966,314.253,316.941,9.573,13.514,419.478,435.052,419.478,404.07,404.07,387.885,468.766,471.776,468.766,464.564,460.374,465.541,389.219,389.522,389.219,394.746,389.219,382.903,288.529,292.171,205.162,205.237,205.162,204.235,205.162,204.918,202.485,207.317,369.412,376.021,369.412,362.52,369.412,371.448,283.721,298.901,283.721,268.816,385.885,379.258,308.295,313.063,376.021,382.903,453.491,458.785,723.407,727.849,723.407,715.813,723.407,727.453,475.656,470.848,527.014,525.678,347.046,342.19,465.047,462.662,453.672,452.62,377.131,379.816,440.066,455.21,440.066,428.152,440.066,436.101,746.387,740.705,740.705,732.541,472.964,504.969,472.964,476.359,472.964,455.21,472.964,470.892,537.538,525.678,537.538,504.969,537.538,533.275,537.538,562.939,537.538,538.202,632.562,640.254,688.894,687.137,496.256,504.969,504.969,506.579,468.753,471.878,468.753,464.564,510.171,504.969,342.19,353.198,342.19,334.079,342.19,342.852,342.19,344.943,382.903,390.541,137.821,134.456,415.085,431.516,415.085,424.346,415.085,391.877,379.816,383.735,525.678,530.195,525.678,515.859,518.077,526.035,518.077,522.825,518.077,506.46,492.56,488.575,492.56,493.301,492.56,492.92,711.551,699.303,711.551,722.896,637.834,639.049,356.004,362.158,356.004,347.769,647.583,643.78,698.019,696.515,488.575,485.159,127.911,127.273,127.911,130.513,507.82,502.89,616.697,619.022,616.697,612.818,619.022,648.254,673.67,648.254,673.67,696.515,673.67,677.927,431.516,447.66,348.747,351.53,348.747,362.52,688.94,684.21,281.242,278.561,281.242,280.944,281.242,274.353,281.242,292.756,658.858,654.584,240.328,254.411,240.328,226.34,240.328,240.406,240.328,238.508,362.158,367.37,648.254,654.584,648.254,651.453,648.254,651.718,193.248,173.209,193.248,212.605,193.248,193.649,635.823,645.844,637.253,635.707,733.823,726.769,733.823,736.884,219.681,224.438,696.515,702.331,696.515,715.935,387.885,383.735,387.885,390.612,342.278,331.12,342.278,338.939,342.278,356.434,172.443,172.789,268.543,268.816,411.57,414.971,62.81,66.338,442.702,446.489,606.707,602.548,393.237,392.291,715.935,726.769,715.935,717.799,392.291,390.612,468.604,472.964,591.426,595.89,430.094,434.678,114.861,104.973,114.861,127.273,97.115,104.973,97.115,91.399,244.381,228.766,244.381,259.249,435.052,451.598,435.052,431.884,451.598,448.101,451.598,450.664,172.789,173.209,173.209,154.253,173.209,176.736,595.417,595.89,371.73,379.258,371.73,362.52,554.052,568.947,554.052,537.538,313.063,321.17,205.237,205.34,205.237,205.273,419.622,424.346,568.947,583.075,706.101,702.331,97.629,95.415,464.564,467.995,464.564,460.999,464.564,447.66,464.564,478.909,696.776,684.21,86.514,91.135,487.777,488.081,95.02,91.135,515.859,506.254,152.944,153.355,502.89,496.97,97.51,95.415,286.386,298.247,286.386,274.05,618.235,622.126,618.235,617.312,618.235,616.697,298.247,309.966,91.135,88.755,205.273,205.175,205.273,208.298,302.832,311.441,302.832,292.756,651.718,654.446,614.534,610.156,522.399,518.815,337.975,342.19,643.413,643.78,371.322,387.885,371.322,356.434,506.254,518.815,506.254,500.477,500.477,496.56,415.873,418.866,601.356,592.998,601.356,606.269,589.64,583.075,589.64,596.758,319.689,321.17,81.952,82.68,641.55,643.279,606.198,610.156,606.138,610.156,611.273,610.156,470.848,462.662,462.662,452.62,326.35,331.272,452.62,442.52,336.226,332.02,336.226,334.891,336.226,338.939,336.226,338.841,447.66,449.833,645.247,641.118,645.247,651.099,127.273,138.03,639.049,632.817,639.049,645.844,613.602,618.235,461.601,458.785,258.537,255.558,258.537,254.964,258.537,262.366,531.141,526.035,226.634,230.65,226.634,215.572,226.634,236.418,226.634,222.954,226.634,224.438,226.634,225.924,254.017,245.324,254.017,262.366,245.324,236.418,207.317,215.572,278.561,275.76,155.674,154.253,413.507,418.866,733.1,728.633,728.633,722.896,722.896,732.541,324.922,311.325,640.254,637.564,634.927,637.564,274.353,267.757,267.757,262.366,367.37,373.048,346.097,348.885,81.25,82.68,732.541,733.767,687.137,684.21,193.649,195.856,193.649,191.63,428.152,418.866,681.046,684.21,592.998,583.075,592.998,596.972,35.558,34.608,687.555,684.21,587.108,587.674,491.007,491.535,204.918,184.931,204.918,224.438,113.509,117.201,113.509,134.456,225.924,224.476,226.34,215.502,226.34,223.916,226.34,221.642,596.758,603.105,400.996,397.655,134.456,154.253,446.489,434.678,376.456,375.497,750.0,746.387,651.099,657.661,643.279,645.844,546.576,537.538,546.576,553.609,522.825,526.331,485.69,489.466,224.438,244.125,224.438,224.158,242.488,244.125,553.609,558.28,684.21,699.303,684.21,657.661,684.21,683.428,684.21,679.967,522.275,525.678,244.125,247.685,244.125,245.437,34.221,26.381,34.221,34.608,34.221,50.075,34.221,24.351,15.988,24.351,15.988,8.535,8.559,8.535,50.075,66.338,66.338,82.68,0.0,2.887,2.887,8.535,398.717,401.179,398.717,394.746,727.453,729.888,134.669,138.03,397.655,391.877,390.113,391.877,602.548,595.572,210.04,215.502,632.817,628.963,484.925,489.608,489.608,496.256,432.367,442.52,432.367,424.346,607.043,603.105,334.079,334.891,373.048,375.497,626.805,635.707,626.805,619.022,352.162,340.073,352.162,348.768,352.162,348.885,370.476,372.595,333.932,336.859,141.407,153.355,119.871,117.201,153.355,165.648,153.355,149.667,583.075,581.361,319.155,309.966,657.661,645.844,212.605,228.766,651.74,655.501,651.74,645.844,541.721,537.327,537.327,529.69,656.177,654.446,434.678,433.49,714.09,712.513,714.09,715.813,464.281,465.541,308.401,309.966,424.346,434.678,493.301,478.909,493.301,506.46,493.301,489.466,394.446,397.655,478.909,482.308,254.411,268.816,184.931,165.648,331.12,321.17,104.731,100.24,465.541,472.964,635.707,643.78,643.78,649.07,221.642,218.35,580.752,587.674,580.752,576.723,275.76,279.283,275.76,274.05,26.381,19.344,316.505,315.522,587.674,595.572,587.674,588.217,19.344,13.514,513.922,515.872,513.922,510.171,259.249,261.2,259.249,274.05,318.356,311.441,297.412,311.325,99.713,100.24,165.648,155.983,155.983,146.936,146.936,138.03,205.175,205.096,523.153,518.815,502.578,504.969,529.69,518.815,644.796,648.254,104.329,100.24,100.24,95.997,324.504,319.155,322.869,318.356],
+z: [375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0,375.0],
+},
+};
+
+</script>
+    
+    <script>
+
+      //status on whether to show or not the background canvas
+      let FullMolinBkg = false;
+
+      class Faerun {
+        constructor() {
+          this.body = document.getElementsByTagName('body')[0];
+
+          this.selectedItems = [];
+          this.selectedIndicators = [];
+          this.selectedCurrent = [];
+          this.scatterMeta = [{"categorical": [true], "fog_intensity": 0.0, "has_legend": true, "interactive": true, "is_range": [false], "label_index": [0], "legend": [[[[0.3058823529411765, 0.4745098039215686, 0.6549019607843137, 1.0], "rRNA"], [[0.9490196078431372, 0.5568627450980392, 0.16862745098039217, 1.0], "riboswitch"], [[0.8823529411764706, 0.3411764705882353, 0.34901960784313724, 1.0], "aptamer RNA"], [[0.6901960784313725, 0.47843137254901963, 0.6313725490196078, 1.0], "ribozyme"], [[0.34901960784313724, 0.6313725490196078, 0.30980392156862746, 1.0], "tRNA"], [[0.4627450980392157, 0.7176470588235294, 0.6980392156862745, 1.0], "mRNA"], [[0.9294117647058824, 0.788235294117647, 0.2823529411764706, 1.0], "TAR RNA"], [[1.0, 0.615686274509804, 0.6549019607843137, 1.0], "RNA/DNA hybrid"], [[0.611764705882353, 0.4588235294117647, 0.37254901960784315, 1.0], "snRNA"], [[0.5254901960784314, 0.7372549019607844, 0.7137254901960784, 1.0], "telomerase RNA"], [[0.8313725490196079, 0.6509803921568628, 0.7843137254901961, 1.0], "SRE RNA"], [[0.788235294117647, 0.7607843137254902, 0.7137254901960784, 1.0], "synthetic"], [[0.6274509803921569, 0.6274509803921569, 0.6274509803921569, 1.0], "multiple"], [[0.8509803921568627, 0.8509803921568627, 0.8509803921568627, 1.0], "unknown"]]], "legend_title": ["RNA family"], "mapping": {"c": "c", "cs": "cs", "knn": "knn", "labels": "labels", "s": "s", "x": "x", "y": "y", "z": "z"}, "max_c": [13.0], "max_legend_label": ["13.00"], "max_point_size": 20.0, "min_c": [0.0], "min_legend_label": ["0.00"], "name": "tmap_family", "ondblclick": [null], "point_scale": 4.333333333333333, "selected_labels": [null], "series_title": ["RNA family"], "shader": "smoothCircle", "title_index": [0]}];
+          this.treeMeta = [{"color": "#cccccc", "fog_intensity": 0.0, "mapping": {"c": "c", "from": "from", "to": "to", "x": "x", "y": "y", "z": "z"}, "name": "tmap_family_tree", "point_helper": "tmap_family"}];
+          this.seriesState = {};
+          this.el = {};
+
+          this.currentPoint = null;
+
+          this.lore = null;
+          this.clearColorHex = '#ffffff';
+          this.clearColor = null;
+          this.view = 'front';
+          this.antiAliasing = true;
+          this.alphaBlending = true;
+          this.thumbnailWidth = 250;
+          this.thumbnailFixed = false;
+
+          this.treeHelpers = [];
+          this.pointHelpers = [];
+          this.octreeHelpers = [];
+          this.coordinatesHelper = null;
+
+          this.ohIndexToPhName = [];
+          this.ohIndexToPhIndex = [];
+          this.phIndexMap = {};
+          this.ohIndexMap = {};
+
+          this.min = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+          this.max = [-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE];
+          this.maxRadius = -Number.MAX_VALUE;
+
+          this.coords = {
+            show: false,
+            grid: false,
+            ticks: true,
+            tickCount: 10,
+            tickLength: 2.0,
+            color: '#888888',
+            box: false,
+            offset: 5.0
+          };
+
+          this.legend = {
+            show: true,
+            title: 'Legend'
+          };
+
+          
+          this.sdMolOpts = {
+            width: this.thumbnailWidth / window.devicePixelRatio,
+            height: this.thumbnailWidth / window.devicePixelRatio,
+            experimental: true
+          }
+
+          this.sdSelected = new SmiDrawer(this.sdMolOpts);
+
+          if (this.thumbnailFixed) {
+            this.sdMolOpts = {
+              scale: 0.75,
+              experimental: true
+            }
+          }
+
+          this.sd = new SmiDrawer(this.sdMolOpts);
+
+          this.el = Faerun.bindElements();
+
+          this.scatterMeta.forEach(s => {
+            this.seriesState[s.name] = 0;
+          });
+
+          this.clearColor = Lore.Core.Color.fromHex(this.clearColorHex);
+          this.alphaBlending = (this.view === 'free' ? false : true) || this.alphaBlending;
+
+          this.initLore();
+          this.initTreeHelpers();
+          this.initPointHelpers();
+          this.initCoords();
+          this.initAxes();
+          this.initView();
+          this.initEvents();
+          this.renderLegend();
+        }
+
+        initLore() {
+          this.lore = Lore.init('lore', {
+            antialiasing: this.antiAliasing,
+            clearColor: this.clearColorHex,
+            alphaBlending: this.alphaBlending,
+            preserveDrawingBuffer: true
+          });
+        }
+
+        initTreeHelpers() {
+          this.treeMeta.forEach(t => {
+            let th = new Lore.Helpers.TreeHelper(this.lore, t.name, 'tree');
+            th.setXYZHexS(data[t.name].x, data[t.name].y, data[t.name].z, t.color);
+            th.setFog([this.clearColor.components[0], this.clearColor.components[1], 
+                       this.clearColor.components[2], this.clearColor.components[3]],
+                      t.fog_intensity);
+            this.treeHelpers.push(th);
+          });
+        }
+
+        initPointHelpers() {
+          this.scatterMeta.forEach(s => {           
+            let ph = new Lore.Helpers.PointHelper(
+              this.lore, s.name, s.shader, { maxPointSize: s.max_point_size }
+            );
+
+            ph.setXYZRGBS(data[s.name].x, data[s.name].y, data[s.name].z, 
+                          data[s.name]['colors'][0].r, data[s.name]['colors'][0].g, 
+                          data[s.name]['colors'][0].b, data[s.name]['s'] ? data[s.name]['s'][0] : 1.0);
+
+            ph.setPointScale(s.point_scale);
+            ph.setFog([this.clearColor.components[0], this.clearColor.components[1],
+                       this.clearColor.components[2], this.clearColor.components[3]],
+                      s.fog_intensity)
+
+            this.phIndexMap[s.name] = this.pointHelpers.length;
+            this.pointHelpers.push(ph);
+
+            this.min[0] = Faerun.getMin(data[s.name].x, this.min[0]);
+            this.min[1] = Faerun.getMin(data[s.name].y, this.min[1]);
+            this.min[2] = Faerun.getMin(data[s.name].z, this.min[2]);
+            this.max[0] = Faerun.getMax(data[s.name].x, this.max[0]);
+            this.max[1] = Faerun.getMax(data[s.name].y, this.max[1]);
+            this.max[2] = Faerun.getMax(data[s.name].z, this.max[2]);
+            this.maxRadius = ph.getMaxRadius();
+    
+            if (s.interactive && data[s.name].labels) {
+              this.octreeHelpers.push(
+                new Lore.Helpers.OctreeHelper(this.lore, 'Octree_' + s.name, 'tree', ph)
+              );
+
+              this.ohIndexMap[s.name] = this.octreeHelpers.length - 1;
+              this.ohIndexToPhName.push(s.name);
+              this.ohIndexToPhIndex.push(this.phIndexMap[s.name]);
+            }
+          });
+        }
+
+        initCoords() {
+          if (!this.coords.show) return;
+
+          let min = [0, 0, 0];
+          let max = [0, 0, 0];
+
+          for (var i = 0; i < 3; i++) {
+            min[i] = this.min[i] - this.coords.offset;
+            max[i] = this.max[i] + this.coords.offset;
+          }
+
+          this.coordinatesHelper = new Lore.Helpers.CoordinatesHelper(this.lore, 'Coordinates', 'coordinates', {
+            position: new Lore.Math.Vector3f(min[0], min[1], min[2]),
+            axis: {
+              x: {
+                length: max[0] - min[0],
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              },
+              y: {
+                length: max[1] - min[1],
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              },
+              z: {
+                length: max[2] - min[2],
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              }
+            },
+            ticks: {
+              enabled: this.coords.ticks,
+              x: {
+                length: this.coords.tickLength,
+                color: Lore.Core.Color.fromHex(this.coords.color),
+                count: this.coords.tickCount
+              },
+              y: {
+                length: this.coords.tickLength,
+                color: Lore.Core.Color.fromHex(this.coords.color),
+                count: this.coords.tickCount
+              },
+              z: {
+                length: this.coords.tickLength,
+                color: Lore.Core.Color.fromHex(this.coords.color),
+                count: this.coords.tickCount
+              }
+            },
+            box: {
+              enabled: this.coords.box,
+              x: {
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              },
+              y: {
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              },
+              z: {
+                color: Lore.Core.Color.fromHex(this.coords.color)
+              }
+            }
+          });
+        }
+
+        initAxes() {
+          // Wait for DOM to get ready
+          setTimeout(() => {
+            this.updateTitle(true);
+            this.updateXAxis(true);
+            this.updateYAxis(true);
+          }, 500);
+        }
+
+        initView() {
+          let center = new Lore.Math.Vector3f(
+              (this.max[0] + this.min[0]) / 2.0, 
+              (this.max[1] + this.min[1]) / 2.0, 
+              (this.max[2] + this.min[2]) / 2.0
+            );
+          this.lore.controls.setLookAt(center);
+          this.lore.controls.setRadius(this.maxRadius + 100);
+          this.lore.controls.setView(0.9, -0.5)
+          this.lore.controls.setViewByName(this.view);
+        }
+
+        initEvents() {
+          this.lore.controls.addEventListener('updated', () => {
+            // Update the position / content of the annotations every time
+            // the view changes
+            this.updateTitle();
+            this.updateYAxis();
+            this.updateXAxis();
+            this.updateSelectedIndicators();
+          });
+
+          Lore.Helpers.OctreeHelper.joinHoveredChanged(this.octreeHelpers, e => {
+            let phName = this.ohIndexToPhName[e.source];
+            if (e.e && data[phName].labels) {
+              let fullLabel = data[phName].labels[e.e.index];
+              let labelIndex = this.scatterMeta[this.ohIndexToPhIndex[e.source]]
+                                  .label_index[this.seriesState[phName]];
+              let titleIndex = this.scatterMeta[this.ohIndexToPhIndex[e.source]]
+                                  .title_index[this.seriesState[phName]];
+
+              let rgbColor = this.pointHelpers[e.source].getColor(e.e.index);
+              let hexColor = Lore.Core.Color.rgbToHex(rgbColor[0], rgbColor[1], rgbColor[2]);
+
+              this.currentPoint = {
+                index: e.e.index,
+                fullLabel: fullLabel.split('__'),
+                source: phName,
+                label: fullLabel.split('__')[labelIndex],
+                color: hexColor,
+                labelIndex: labelIndex,
+                titleIndex: titleIndex
+              }
+              
+              if (FullMolinBkg == true) {
+
+                document.getElementById("overlay-structure-container").style.visibility = "visible";
+
+                var overlayStruc_Width = document.getElementById("overlay-structure-container").offsetWidth
+                var overlayStruc_Height = document.getElementById("overlay-structure-container").offsetHeight
+
+                if (overlayStruc_Width > overlayStruc_Height) {overlayStruc_Width = overlayStruc_Height}
+
+                this.sd = new SmiDrawer({
+                  width: overlayStruc_Width / window.devicePixelRatio,
+                  height: overlayStruc_Width / window.devicePixelRatio,
+                  bondThickness: 1.4,
+                  experimental: true
+                });
+
+                this.setTipContent();
+                this.sd = new SmiDrawer(this.sdMolOpts);
+              } else {
+
+                document.getElementById("overlay-structure-container").style.visibility = "hidden";
+                this.setTipContent__();
+
+                this.el.tip.classList.add('show');
+
+                let pointSize = this.pointHelpers[e.source].getPointSize() / window.devicePixelRatio;
+                let x = e.e.screenPosition[0];
+                let y = e.e.screenPosition[1];
+
+                this.el.hoverIndicator.style.width = pointSize + 'px';
+                this.el.hoverIndicator.style.height = pointSize + 'px';
+                this.el.hoverIndicator.style.left = (x - pointSize / 2.0 - 1) + 'px';
+                this.el.hoverIndicator.style.top = (y - pointSize / 2.0 - 1) + 'px';
+
+                this.el.hoverIndicator.classList.add('show');
+                }
+
+            } else {
+              this.currentPoint = null;
+              this.el.tip.classList.remove('show');
+              this.el.hoverIndicator.classList.remove('show');
+            }
+          });
+
+          Lore.Helpers.OctreeHelper.joinSelectedChanged(this.octreeHelpers, items => {
+            this.selectedItems = items;
+            this.updateSelected();
+          });
+
+          Lore.Helpers.OctreeHelper.joinReselected(this.octreeHelpers, item => {
+            this.updateSelected(
+              this.getSelectedIndex(item[0].source, item[0].item.e.index)
+            );
+          });
+
+          // Event listeners
+          this.el.selectedPrev.addEventListener('click', e => {
+            e.preventDefault();
+            this.updateSelected(this.selectedCurrent - 1);
+            return false;
+          });
+
+          this.el.selectedNext.addEventListener('click', e => {
+            e.preventDefault();
+            this.updateSelected(this.selectedCurrent + 1);
+            return false;
+          });
+
+          this.el.selectedRemove.addEventListener('click', e => {
+            e.preventDefault();
+            let item = this.selectedItems[this.selectedCurrent]
+            this.octreeHelpers[item.source].removeSelected(item.index);
+            return false;
+          });
+
+          document.addEventListener('dblclick', e => {
+            if (this.currentPoint) {
+              var index = this.currentPoint.index;
+              var labels = this.currentPoint.label.split('__');
+              var source = this.currentPoint.source;
+              eval(this.scatterMeta[this.phIndexMap[source]].ondblclick[this.seriesState[source]]);
+            }
+          });
+
+          document.addEventListener('mousemove', e => {
+            if (FullMolinBkg == false) {
+              document.getElementById("tip").style.visibility = "visible";
+
+              if (!this.thumbnailFixed) {
+                let x = e.clientX;
+                let y = e.clientY;
+
+                if (x > window.innerWidth - this.el.tip.offsetWidth - 20) {
+                  x -= this.el.tip.offsetWidth;
+                } else {
+                  x += 10;
+                }
+
+                if (y > window.innerHeight - this.el.tip.offsetHeight - 20) {
+                  y -= this.el.tip.offsetHeight;
+                } else {
+                  y += 10;
+                }
+
+                if (this.el.tip) {
+                  this.el.tip.style.top = y + 'px';
+                  this.el.tip.style.left = x + 'px';
+                }
+              }
+            } else {
+              document.getElementById("tip").style.visibility = "hidden";
+            }
+          });
+
+          this.el.selectedToggle.addEventListener('click', e => {
+            this.el.selectedContainer.classList.toggle('hide');
+            if (this.el.selectedContainer.classList.contains('hide'))
+              this.el.selectedToggle.innerHTML = '<i class="fas fa-toggle-off"></i>';
+            else
+              this.el.selectedToggle.innerHTML = '<i class="fas fa-toggle-on"></i>';
+            
+            e.preventDefault();
+            return false;
+          });
+
+          this.el.showControls.addEventListener('click', e => {
+            this.el.moreControls.classList.toggle('hide');
+            e.preventDefault();
+            return false;
+          });
+
+          this.el.search.addEventListener('click', e => {
+            let searchTerm = prompt('Please enter a search term:', '');
+            const results = this.search(searchTerm);
+
+            for (const [name, indices] of Object.entries(results)) {
+              if (!name in this.ohIndexMap) return;
+              indices.forEach(index => {
+                this.octreeHelpers[this.ohIndexMap[name]].addSelected(index);
+              });
+            }
+            
+            e.preventDefault();
+            return false;
+          });
+
+          window.addEventListener('keydown', e => {
+            if ((e.keyCode == 114) || (e.ctrlKey && e.keyCode == 70)) {
+              this.search();
+              e.preventDefault();
+              return false;
+            }
+          });
+
+          this.el.export.addEventListener('click', e => {
+            e.preventDefault();
+
+            let canvas = document.getElementById('lore');
+            let zoom = this.lore.controls.getZoom();
+
+            canvas.style.width = (canvas.width * 2) + 'px';
+            canvas.style.height = (canvas.height * 2) + 'px';
+            this.lore.controls.setZoom(zoom * 2);
+
+            setTimeout(() => {
+              let blob = this.lore.canvas.toBlob(blob => {
+                let a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.setAttribute('download', 'export.png');
+                a.click();
+                
+                setTimeout(() => {
+                  canvas.style.width = '100%';
+                  canvas.style.height = '100%';
+                  lore.controls.setZoom(zoom);
+                }, 2000);
+              });
+            }, 2000);
+          });
+
+          this.el.download.addEventListener('click', e => {
+            e.preventDefault();
+
+            let text = ''
+            this.selectedItems.forEach(item => {
+              let phIndex = this.ohIndexToPhIndex[item.source];
+              let meta = this.scatterMeta[phIndex];
+              let phName = this.ohIndexToPhName[item.source];
+              let seriesState = this.seriesState[phName];
+
+              let fullLabel = data[phName].labels[item.item.index].split('__');
+
+              let labelIndex = meta.label_index[seriesState];
+              let titleIndex = meta.title_index[seriesState];
+              let selectedLabels = meta.selected_labels[seriesState];
+
+              fullLabel.forEach((l, i) => {
+                text += l + ';'
+              });
+              text = text.slice(0, -1); 
+              text += '\n';
+            });
+
+            var a = document.createElement('a');
+            a.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            a.setAttribute('download', 'faerun_list.csv');
+
+            a.style.display = 'none';
+            document.body.appendChild(a);
+
+            a.click();
+
+            document.body.removeChild(a);
+
+            return false;
+          });
+
+          this.el.largepreview.addEventListener('click', e => {
+            
+            //Switch display mode:
+            if (FullMolinBkg == false) {
+              FullMolinBkg = true;
+            } else {
+              FullMolinBkg = false;
+              //HIDE BIG CANVAS IN BACKGROUND:
+              document.getElementById("overlay-structure-container").style.visibility = "hidden";
+            }
+          });
+        }
+
+        setTipContent__() {
+          this.sd.draw(this.currentPoint.label, this.thumbnailFixed ? 'svg' : 'img', "light", element => {
+            this.el.tipText.innerHTML = '';
+            if (this.currentPoint.titleIndex !== this.currentPoint.labelIndex)
+              this.el.tipText.innerHTML = `${this.currentPoint.fullLabel[this.currentPoint.titleIndex]}<br />`;
+            this.el.tipText.appendChild(element);
+            this.el.tip.style.borderColor = this.currentPoint.color;
+            document.getElementById("tip").style.visibility = "visible";
+          });
+        }
+
+        setTipContent() {
+          this.sd.draw(this.currentPoint.label, "#overlay-structure", "dark");
+          document.getElementById("tip").style.visibility = "hidden";
+        }
+
+        setSelectedContent(fullLabel, labelIndex, selectedLabels, img) {
+          this.el.selectedContainer.innerHTML = '';
+          if (img)
+            this.el.selectedContainer.appendChild(img);
+
+          fullLabel.forEach((l, i) => {
+            if (i === labelIndex) return;
+            if (selectedLabels && selectedLabels[i]) {
+              this.el.selectedContainer.appendChild(
+                Faerun.createElement('div', { classes: 'label', content: selectedLabels[i] })
+              );
+            }
+            this.el.selectedContainer.appendChild(
+              Faerun.createElement('div', { classes: 'content', content: l })
+            );
+          });
+
+          // Update the indicator
+          this.updateSelectedIndicators();
+        }
+
+        renderLegend() {
+          if (!this.legend.show) return;
+
+          
+          let legend = document.getElementById('legend');
+          
+          if (legend) this.body.removeChild(legend);
+
+          legend = Faerun.createElement('div', { id: 'legend' });
+          this.body.appendChild(legend)
+          
+          if (this.legend.title && this.legend.title !== '')
+            legend.appendChild(Faerun.createElement('h2', { content: 'Legend' }));
+          
+          let container = Faerun.createElement('div', { classes: 'container' });
+          legend.appendChild(container);
+
+          this.scatterMeta.forEach(s => {
+            let index = this.seriesState[s.name];
+            if (s.has_legend) {
+              let legendSection = []
+              if (!s.is_range[index]) {
+                s.legend[index].forEach(v => {
+                  legendSection.push(Faerun.createElement('div', { classes: 'legend-element' }, [
+                    Faerun.createColorBox(v[0]),
+                    Faerun.createElement('div', { classes: 'legend-label', content: v[1] }),
+                  ]))
+                })
+              } else {
+                legendSection.push(Faerun.createElement('div', { classes: 'legend-element-range' }, [
+                  ...Faerun.createColorScale(s.legend[index]),
+                  Faerun.createElement('div', { 
+                    classes: 'legend-label max', 
+                    content: s.max_legend_label[index] 
+                  }),
+                  Faerun.createElement('div', {
+                    classes: 'legend-label min',
+                    content: s.min_legend_label[index] 
+                  })
+                ]))
+              }
+
+              let series = [];
+              for (var i = 0; i < s.series_title.length; i++) {
+                series.push(
+                  Faerun.createElement('option', { 
+                    value: i, 
+                    content: s.series_title[i], 
+                    selected: i === index
+                  })
+                );
+              }
+
+
+              let sectionHeader = Faerun.createElement(
+                'h3', { content: s.legend_title[index] }
+              );
+              sectionHeader.addEventListener('click', e => {
+                this.toggleLegendSection(s.name);
+              });
+
+              let seriesSelector = Faerun.createElement(
+                'select', 
+                { 
+                  id: `select-${s.name}`, 
+                  classes: 'series-selector',
+                  'data-name': s.name,
+                  hidden: s.series_title.length < 2,
+                }, 
+                [ ...series ]
+              );
+              seriesSelector.addEventListener('change', e => {
+                let value = document.getElementById(`select-${s.name}`).value;
+                this.changeSeries(value, s.name);
+              });
+
+
+              container.appendChild(
+                Faerun.createElement(
+                  'div', { id: `legend-${s.name}`, 
+                  classes: 'legend-section', 
+                  'data-name': `${s.name}` },
+                  [ sectionHeader, seriesSelector, ...legendSection ]
+                )
+              );
+            }
+          });
+        }
+
+        toggleLegendSection(name) {
+          let section = document.getElementById('legend-' + name);
+          let geometry = this.pointHelpers[this.phIndexMap[name]].geometry;
+          let isVisible = geometry.isVisible;
+
+          if (isVisible) {
+            geometry.hide();
+            section.style.opacity = 0.5;
+          } else {
+            geometry.show();
+            section.style.opacity = 1.0;
+          }
+        }
+
+        getSelectedIndex(source, index) {
+          let selectedIndex = null;
+          this.selectedItems.forEach((item, i) => {
+            if (item.source == source && item.item.index == index) {
+              selectedIndex = i;
+              return;
+            }
+          });
+          return selectedIndex;
+        }
+
+        updateSelected(current = -1) {
+          let n = this.selectedItems.length
+          // Hide the container if no items are selected
+          if (n === 0) {
+            this.el.selected.style.display = 'none';
+            return;
+          } else {
+            this.el.selected.style.display = 'block';
+          }
+
+          if (current < 0) current = n - 1;
+          if (current >= n) current = 0;
+          this.selectedCurrent = current;
+
+          let item = this.selectedItems[current];
+
+          let phIndex = this.ohIndexToPhIndex[item.source];
+          let meta = this.scatterMeta[phIndex];
+          let phName = this.ohIndexToPhName[item.source];
+          let seriesState = this.seriesState[phName];
+
+          let fullLabel = data[phName].labels[item.item.index].split('__');
+
+          let labelIndex = meta.label_index[seriesState];
+          let titleIndex = meta.title_index[seriesState];
+          let selectedLabels = meta.selected_labels[seriesState];
+
+          this.sdSelected.draw(fullLabel[labelIndex], 'img', 'dark', img => {
+            this.el.selectedCurrent.innerHTML = current + 1;
+            this.el.selectedTotal.innerHTML = n;
+            this.el.selectedTitle.innerHTML = fullLabel[titleIndex];
+
+            this.setSelectedContent(fullLabel, labelIndex, selectedLabels, img);
+          });
+
+          // Remove all indicators
+          this.selectedIndicators.forEach(indicator => {
+            indicator.element.parentElement.removeChild(indicator.element);
+          });
+          this.selectedIndicators.length = 0;
+
+          // Add the indicator for this object
+          let indicatorElement = Faerun.createElement(
+            'div', 
+            { classes: 'selected-indicator' },
+            [
+              Faerun.createElement('div', { classes: 'crosshair-x' }),
+              Faerun.createElement('div', { classes: 'crosshair-y' })
+            ]
+          );
+
+          this.body.appendChild(indicatorElement);
+          this.selectedIndicators.push({
+            element: indicatorElement,
+            index: item.item.index,
+            ohIndex: item.source,
+            phIndex: phIndex
+          });
+          this.updateSelectedIndicators();
+        }
+
+        updateSelectedIndicators() {
+          this.selectedIndicators.forEach(indicator => {
+            let pointSize = this.pointHelpers[indicator.phIndex].getPointSize();
+            let screenPosition = this.octreeHelpers[indicator.ohIndex]
+                                     .getScreenPosition(indicator.index);
+            
+            // Make the crosshairs larger than the point
+            pointSize = Faerun.getMax([pointSize / window.devicePixelRatio, 10 / window.devicePixelRatio]);
+            pointSize *= 1.25;
+            let halfPointSize = pointSize / 2.0;
+            indicator.element.style.left = (screenPosition[0] - halfPointSize) + 'px';
+            indicator.element.style.top = (screenPosition[1] - halfPointSize) + 'px';
+            indicator.element.style.width = pointSize + 'px';
+            indicator.element.style.height = pointSize + 'px';
+          });
+        }
+
+        updateTitle(first = false) {
+          if (this.el.title === undefined) return;
+
+          let bb = this.el.title.getBoundingClientRect();
+          let scenePosition = new Lore.Math.Vector3f(
+            (this.min[0] + this.min[0]) / 2.0, this.min[1], 
+            (this.min[2] + this.min[2]) / 2.0
+          );
+
+          let screenPosition = this.lore.controls.camera.sceneToScreen(scenePosition, this.lore);
+          
+          this.el.title.style.left = (screenPosition[0] - (bb.width / 2.0)) + 'px';
+          this.el.title.style.top = (screenPosition[1] - bb.height) + 'px';
+
+          if (first) this.el.title.classList.add('show');
+        }
+
+        updateXAxis(first = false) {
+          if (this.el.xAxis === undefined) return;
+          
+          let bb = this.el.xAxis.getBoundingClientRect();
+          let scenePosition = new Lore.Math.Vector3f(
+            (this.min[0] + this.min[0]) / 2.0, this.min[1], 
+            (this.min[2] + this.min[2]) / 2.0
+          );
+
+          let screenPosition = this.lore.controls.camera.sceneToScreen(scenePosition, this.lore);
+          
+          this.el.xAxis.style.left = (screenPosition[0] - (bb.width / 2.0)) + 'px';
+          this.el.xAxis.style.top = (screenPosition[1]) + 'px';
+
+          if (first) this.el.xAxis.classList.add('show');
+        }
+
+        updateYAxis(first = false) {
+          if (this.el.yAxis === undefined) return;
+            
+          let bb = this.el.yAxis.getBoundingClientRect();
+          let scenePosition = new Lore.Math.Vector3f(
+            this.min[0], (this.min[1] + this.min[1]) / 2.0, 
+            (this.min[2] + this.min[2]) / 2.0
+          );
+          
+          let screenPosition = this.lore.controls.camera.sceneToScreen(scenePosition, this.lore);
+          
+          this.el.yAxis.style.left = (screenPosition[0] - bb.height) + 'px';
+          this.el.yAxis.style.top = (screenPosition[1] - bb.width / 2.0) + 'px';
+
+          if (first) this.el.yAxis.classList.add('show');
+        }
+
+        changeSeries(value, name) {
+          value = parseInt(value);
+          this.seriesState[name] = value;
+          this.renderLegend();
+
+          this.pointHelpers[this.phIndexMap[name]].setRGBFromArrays(
+            data[name]['colors'][value].r, 
+            data[name]['colors'][value].g, 
+            data[name]['colors'][value].b
+          );
+
+          if (data[name]['s']) {
+            if (data[name]['s'][value]) {
+              this.pointHelpers[this.phIndexMap[name]].setSize(
+                data[name]['s'][value]
+              );
+            } else {
+              this.pointHelpers[this.phIndexMap[name]].setSize(1.0);
+            }
+          }
+        }
+
+        search(term) {
+          let results = {}
+          let re = new RegExp(term, 'i');
+
+          Object.keys(data).forEach(name => {
+            if (!('labels' in data[name])) return;
+            results[name] = []
+            data[name]['labels'].forEach((label, i) => {
+              if (re.test(label))
+                results[name].push(i)
+            });
+          });
+
+          return results;
+        }
+
+        static createColorBox(value) {
+          return Faerun.createElement(
+            'div', 
+            { 
+              classes: 'color-box', 
+              style: `background-color: rgba(${value[0] * 255}, ${value[1] * 255 }, ${value[2] * 255 }, ${value[3] });
+                      border-color: rgba(${value[0] * 255 }, ${value[1] * 255 }, ${value[2] * 255 }, ${value[3] })`
+            }
+          );
+        }
+
+        static createColorScale(values) {
+          let scale = [];
+
+          values.forEach(value => {
+            scale.push(
+              Faerun.createElement(
+                'div', 
+                { 
+                  classes: 'color-stripe', 
+                  style: `background-color: rgba(${value[0][0] * 255}, ${value[0][1] * 255}, ${value[0][2] * 255}, ${value[0][3]});
+                          border-color: rgba(${value[0][0] * 255}, ${value[0][1] * 255}, ${value[0][2] * 255}, ${value[0][3]})`,
+                  alt: value[1]
+                }
+              ),
+            )
+          });
+
+          return scale;
+        }
+        
+        static createElement(tag, values = {}, children = []) {
+          let element = document.createElement(tag);
+
+          for (const key of Object.keys(values)) {
+            if (key === 'classes')
+              element.classList.add(...values[key].split(' '));
+            else if (key === 'content')
+              element.innerHTML = values[key];
+            else if (key === 'hidden') {
+              if (values[key])
+                element.setAttribute('hidden', true);
+            }
+            else if (key === 'selected') {
+              if (values[key])
+                element.setAttribute('selected', true);
+            }
+            else
+              element.setAttribute(key, values[key]);
+          }
+
+          if (children) {
+            if (Array.isArray(children)) {
+              children.forEach(child => {
+                element.appendChild(child);
+              })
+            } else {
+              element.appendChild(children);
+            }
+          }
+
+          return element;
+        }
+
+        static bindElements() {
+          let result = {};
+          document.querySelectorAll('[data-bind]').forEach(e => {
+            result[e.getAttribute('data-bind')] = e;
+          });
+          return result;
+        }
+
+        static getMin(arr, other = Number.MAX_VALUE) {
+          let m = Number.MAX_VALUE;
+          for (var i = 0; i < arr.length; i++)
+              if (arr[i] < m) m = arr[i];
+          
+          if (m < other) return m;
+          return other;
+        }
+
+        static getMax(arr, other = -Number.MAX_VALUE) {
+          let m = -Number.MAX_VALUE;
+          for (var i = 0; i < arr.length; i++)
+              if (arr[i] > m) m = arr[i];
+          
+          if (m > other) return m;
+          return other;
+        }
+      }
+
+      let f = new Faerun();
+      window.f = f;
+    </script>
+  
+    <script>
+      (function () {
+        function ready() {
+          return window.f && window.f.lore && window.f.lore.controls
+                 && window.f.lore.controls.camera;
+        }
+        var input = document.getElementById('sm-search');
+        var btn = document.getElementById('sm-search-btn');
+        var reset = document.getElementById('sm-search-reset');
+        var msg = document.getElementById('sm-search-msg');
+
+        // Pulsing ring marker (position:absolute, matching the page annotations).
+        var style = document.createElement('style');
+        style.textContent = '@keyframes smpulse{0%{transform:translate(-50%,-50%) scale(1);opacity:1}'
+          + '50%{transform:translate(-50%,-50%) scale(1.45);opacity:0.45}'
+          + '100%{transform:translate(-50%,-50%) scale(1);opacity:1}}'
+          + '#sm-hl-marker{animation:smpulse 1.1s ease-in-out infinite}';
+        document.head.appendChild(style);
+        var marker = document.createElement('div');
+        marker.id = 'sm-hl-marker';
+        marker.style.cssText = 'position:absolute;pointer-events:none;z-index:1500;'
+          + 'display:none;width:28px;height:28px;border:3px solid #FF1744;'
+          + 'border-radius:50%;box-shadow:0 0 7px 2px rgba(255,23,68,0.7);'
+          + 'transform:translate(-50%,-50%);';
+        document.body.appendChild(marker);
+
+        var current = null;  // {x,y,z} of the highlighted point
+        function series() { var n = window.f.scatterMeta[0].name; return data[n]; }
+        function caption(lbl) { var p = lbl.split('__'); return p.length > 1 ? p[1] : lbl; }
+
+        function place() {
+          if (!current || !ready()) { return; }
+          var v = new Lore.Math.Vector3f(current.x, current.y, current.z);
+          var sp = window.f.lore.controls.camera.sceneToScreen(v, window.f.lore);
+          marker.style.left = sp[0] + 'px';
+          marker.style.top = sp[1] + 'px';
+          marker.style.display = 'block';
+        }
+        function highlight() {
+          if (!ready()) { msg.textContent = 'map still loading, try again in a second'; return; }
+          var q = (input.value || '').trim().toLowerCase();
+          if (!q) { return; }
+          var d = series(), idx = -1;
+          for (var i = 0; i < d.labels.length; i++) {
+            if (caption(d.labels[i]).split(' ')[0].toLowerCase() === q) { idx = i; break; }
+          }
+          if (idx < 0) {
+            for (var j = 0; j < d.labels.length; j++) {
+              if (caption(d.labels[j]).toLowerCase().indexOf(q) >= 0) { idx = j; break; }
+            }
+          }
+          if (idx < 0) {
+            msg.textContent = '\u201c' + input.value + '\u201d not found';
+            current = null; marker.style.display = 'none'; return;
+          }
+          msg.textContent = '\u2192 ' + caption(d.labels[idx]);
+          current = { x: d.x[idx], y: d.y[idx], z: d.z[idx] };
+          place();
+        }
+        function clearHl() {
+          current = null; marker.style.display = 'none';
+          msg.textContent = ''; input.value = '';
+        }
+        btn.addEventListener('click', highlight);
+        reset.addEventListener('click', clearHl);
+        input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { highlight(); } });
+
+        // Keep the ring glued to the point as the user pans / zooms / rotates.
+        (function hook() {
+          if (ready()) { window.f.lore.controls.addEventListener('updated', place); }
+          else { setTimeout(hook, 300); }
+        })();
+      })();
+    </script>
+
+  </body>
+</html>
